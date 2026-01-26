@@ -207,7 +207,7 @@
 	--font-microsoft-yahei: "Microsoft YaHei", "Source Han Sans SC", var(--font-sans);
 	--font-system-ui: var(--font-sans);
 
-	--radius-2xl: var(--radius);
+	--radius-2xl: calc(var(--radius) * 1);
 	--radius-3xl: calc(var(--radius) * 1.5);
 	--radius-xl: calc(var(--radius) * 0.8);
 	--radius-lg: calc(var(--radius) * 0.6);
