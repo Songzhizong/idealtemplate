@@ -197,8 +197,9 @@
 	--color-paper-100: var(--paper-100);
 	--color-paper-200: var(--paper-200);
 
-	--font-inter: "Inter", var(--font-sans);
-	--font-manrope: "Manrope", var(--font-sans);
+	--font-inter: "Inter", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", var(--font-sans);
+	--font-manrope:
+		"Manrope", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", var(--font-sans);
 	--font-misans: "MiSans", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", var(--font-sans);
 	--font-harmonyos-sans-sc:
 		"HarmonyOS Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", var(--font-sans);
@@ -214,27 +215,28 @@
 	--radius-sm: calc(var(--radius) * 0.2);
 }
 
+/*noinspection ALL*/
 @layer base {
 	.font-inter {
-		font-family: var(--font-inter), serif;
+		font-family: var(--font-inter);
 	}
 	.font-manrope {
-		font-family: var(--font-manrope), serif;
+		font-family: var(--font-manrope);
 	}
 	.font-misans {
-		font-family: var(--font-misans), system-ui;
+		font-family: var(--font-misans);
 	}
 	.font-harmonyos-sans-sc {
-		font-family: var(--font-harmonyos-sans-sc), system-ui;
+		font-family: var(--font-harmonyos-sans-sc);
 	}
 	.font-pingfang-sc {
-		font-family: var(--font-pingfang-sc), system-ui;
+		font-family: var(--font-pingfang-sc);
 	}
 	.font-microsoft-yahei {
-		font-family: var(--font-microsoft-yahei), system-ui;
+		font-family: var(--font-microsoft-yahei);
 	}
 	.font-system-ui {
-		font-family: var(--font-system-ui), system-ui;
+		font-family: var(--font-system-ui);
 	}
 }
 
