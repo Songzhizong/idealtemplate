@@ -57,7 +57,7 @@ src/
 │   ├── api-client.ts     # [核心] 封装 Zod 校验与 Toast 报错的 Ky 实例
 │   ├── env.ts            # T3 Env 环境变量校验
 │   └── utils.ts          # tailwind-merge 等工具
-├── types/                # [新增] 全局共享类型 (如 API 响应包裹层)
+├── types/                # 全局共享类型 (如 API 响应包裹层)
 │   └── api.d.ts
 ├── features/             # [核心] 业务功能模块
 │   └── dashboard/        # 示例模块
@@ -89,6 +89,7 @@ Your mindset maps Backend concepts (DTO, Controller, Service) to Frontend patter
 - **Shadcn UI**: Always use components from `@/components/ui`. Do not invent new UI styles unless necessary.
 - **Tailwind**: Use utility classes. No CSS modules. Use `clsx` and `tailwind-merge` for conditional classes.
 - **HTTP Client**: Use `ky` exclusively. Do not use `axios` or native `fetch`.
+- **Dark Mode Compatibility**: When defining colors, ALWAYS use Shadcn's semantic variables (e.g., `bg-background`, `text-muted-foreground`, `border-border`) instead of hardcoded colors (e.g., `bg-white`, `text-gray-500`). This ensures automatic dark mode support.
 
 ## Tooling & Package Management
 - **Package Manager**: Exclusively use **pnpm**.
@@ -133,7 +134,7 @@ Your mindset maps Backend concepts (DTO, Controller, Service) to Frontend patter
 - Interface/Type Names: `PascalCase` (No `I` prefix)
 
 ## Example: API & Hook Definition
-```TypeScript
+```typescript
 // features/users/api/get-user.ts
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
