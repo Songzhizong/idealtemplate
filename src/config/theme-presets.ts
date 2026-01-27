@@ -298,6 +298,103 @@ export const themePresets: ThemePreset[] = [
     }
   },
   {
+    "key": "crimson-flame",
+    "name": "炽枫红",
+    "description": "热情且极具冲击力的红色主题，适用于品牌感强烈的专业界面",
+    "schemes": {
+      "light": {
+        "brand": {
+          "primary": "#df0428",
+          "primaryHover": "#f43f5e",
+          "primaryActive": "#be123c",
+          "primaryBg": "#fff1f2",
+          "text": "#ffffff"
+        },
+        "functional": {
+          "success": "#10b981",
+          "successBg": "#ecfdf5",
+          "warning": "#f59e0b",
+          "warningBg": "#fffbeb",
+          "error": "#e11d48",
+          "errorBg": "#fff1f2",
+          "info": "#3b82f6",
+          "infoBg": "#eff6ff"
+        },
+        "text": {
+          "primary": "#111827",
+          "secondary": "#4b5563",
+          "tertiary": "#9ca3af",
+          "inverse": "#ffffff",
+          "link": "#df0428",
+          "linkHover": "#f43f5e"
+        },
+        "background": {
+          "canvas": "#f9fafb",
+          "container": "#ffffff",
+          "elevated": "#ffffff",
+          "layout": "#ffffff",
+          "hover": "#f3f4f6",
+          "active": "#fff1f2"
+        },
+        "border": {
+          "base": "#e5e7eb",
+          "strong": "#d1d5db",
+          "subtle": "#f3f4f6"
+        },
+        "shadow": {
+          "sm": "0 1px 2px 0 rgba(223, 4, 40, 0.05)",
+          "md": "0 4px 6px -1px rgba(223, 4, 40, 0.1)",
+          "lg": "0 10px 15px -3px rgba(223, 4, 40, 0.1)"
+        }
+      },
+      "dark": {
+        "brand": {
+          "primary": "#f43f5e",
+          "primaryHover": "#fb7185",
+          "primaryActive": "#e11d48",
+          "primaryBg": "#4c0519",
+          "text": "#ffffff"
+        },
+        "functional": {
+          "success": "#34d399",
+          "successBg": "#064e3b",
+          "warning": "#fbbf24",
+          "warningBg": "#451a03",
+          "error": "#fb7185",
+          "errorBg": "#4c0519",
+          "info": "#60a5fa",
+          "infoBg": "#1e3a8a"
+        },
+        "text": {
+          "primary": "#f9fafb",
+          "secondary": "#d1d5db",
+          "tertiary": "#9ca3af",
+          "inverse": "#111827",
+          "link": "#fb7185",
+          "linkHover": "#fda4af"
+        },
+        "background": {
+          "canvas": "#0f172a",
+          "container": "#1e293b",
+          "elevated": "#334155",
+          "layout": "#1e293b",
+          "hover": "#334155",
+          "active": "#4c0519"
+        },
+        "border": {
+          "base": "#334155",
+          "strong": "#475569",
+          "subtle": "#1e293b"
+        },
+        "shadow": {
+          "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.4)",
+          "md": "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
+          "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.6)"
+        }
+      }
+    }
+  },
+  {
     key: "sunset-orange",
     name: "日落橘",
     description: "温暖而克制的橙色主题，强调行动力与活力",
