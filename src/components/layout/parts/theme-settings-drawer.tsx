@@ -1,8 +1,19 @@
 import { Columns2, Copy, Layout, Palette, RotateCcw } from "lucide-react"
+import { useState } from "react"
 import { toast } from "sonner"
 import darkThemeImg from "@/assets/images/theme_styles/dark.png"
 import lightThemeImg from "@/assets/images/theme_styles/light.png"
 import systemThemeImg from "@/assets/images/theme_styles/system.png"
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Label } from "@/components/ui/label.tsx"
 import {
@@ -25,6 +36,7 @@ import { cn } from "@/lib/utils.ts"
 
 export function ThemeSettingsDrawer() {
 	const store = useThemeStore()
+	const [showResetDialog, setShowResetDialog] = useState(false)
 
 	const handleCopyConfig = () => {
 		const config = {
@@ -44,16 +56,15 @@ export function ThemeSettingsDrawer() {
 	}
 
 	const handleResetConfig = () => {
-		if (confirm("确定要重置所有设置吗？")) {
-			store.setMode("system")
-			store.setPreset("sky-blue")
-			store.setFontFamily("inter")
-			store.setMenuLayout("single")
-			store.setContainerWidth("fixed")
-			store.setBorderRadius(12)
-			store.setPageAnimation("slide-left")
-			toast.success("主题配置已重置")
-		}
+		store.setMode("system")
+		store.setPreset("sky-blue")
+		store.setFontFamily("inter")
+		store.setMenuLayout("single")
+		store.setContainerWidth("fixed")
+		store.setBorderRadius(12)
+		store.setPageAnimation("slide-left")
+		setShowResetDialog(false)
+		toast.success("主题配置已重置")
 	}
 
 	return (
@@ -383,7 +394,7 @@ export function ThemeSettingsDrawer() {
 						<Button
 							variant="outline"
 							className="flex-1 gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-							onClick={handleResetConfig}
+							onClick={() => setShowResetDialog(true)}
 						>
 							<RotateCcw className="h-4 w-4" />
 							重置配置
@@ -391,6 +402,26 @@ export function ThemeSettingsDrawer() {
 					</div>
 				</div>
 			</SheetContent>
+
+			<AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>确定要重置所有设置吗？</AlertDialogTitle>
+						<AlertDialogDescription>
+							此操作将恢复所有主题设置到默认值，包括主题风格、颜色、布局等配置。
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>取消</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleResetConfig}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							确定重置
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Sheet>
 	)
 }
