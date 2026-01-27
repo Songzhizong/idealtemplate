@@ -21,23 +21,23 @@ export interface ThemeConfig {
 }
 
 export const defaultThemeConfig: ThemeConfig = {
-	theme: "system",
-	fontFamily: "inter",
-	menuLayout: "single",
-	themeColors: {
-    primary: "#5d87ff",
-    success: "#52c41a",
-    warning: "#faad14",
-    error: "#f5222d",
-	},
-	containerWidth: "full",
-	sidebarWidth: 240,
-	sidebarCollapsedWidth: 74,
-	headerHeight: 64,
-	showBreadcrumb: true,
-	showBreadcrumbIcon: true,
-	pageAnimation: "fade",
-	borderRadius: 10,
+  "theme": "system",
+  "fontFamily": "inter",
+  "menuLayout": "single",
+  "themeColors": {
+    "primary": "#5d87ff",
+    "success": "#52c41a",
+    "warning": "#faad14",
+    "error": "#f5222d"
+  },
+  "containerWidth": "fixed",
+  "sidebarWidth": 240,
+  "sidebarCollapsedWidth": 64,
+  "headerHeight": 64,
+  "showBreadcrumb": true,
+  "showBreadcrumbIcon": true,
+  "pageAnimation": "slide-left",
+  "borderRadius": 12
 }
 
 export const presetColors = [
