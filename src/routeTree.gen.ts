@@ -16,6 +16,7 @@ import { Route as Errors500RouteImport } from './routes/errors/500'
 import { Route as Errors404RouteImport } from './routes/errors/404'
 import { Route as Errors403RouteImport } from './routes/errors/403'
 import { Route as BlankLoginRouteImport } from './routes/_blank.login'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated.users'
 
 const BlankRoute = BlankRouteImport.update({
   id: '/_blank',
@@ -50,9 +51,15 @@ const BlankLoginRoute = BlankLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => BlankRoute,
 } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/login': typeof BlankLoginRoute
   '/errors/403': typeof Errors403Route
   '/errors/404': typeof Errors404Route
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/login': typeof BlankLoginRoute
   '/errors/403': typeof Errors403Route
   '/errors/404': typeof Errors404Route
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_blank': typeof BlankRouteWithChildren
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_blank/login': typeof BlankLoginRoute
   '/errors/403': typeof Errors403Route
   '/errors/404': typeof Errors404Route
@@ -77,13 +86,20 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/errors/403' | '/errors/404' | '/errors/500'
+  fullPaths:
+    | '/'
+    | '/users'
+    | '/login'
+    | '/errors/403'
+    | '/errors/404'
+    | '/errors/500'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/errors/403' | '/errors/404' | '/errors/500'
+  to: '/' | '/users' | '/login' | '/errors/403' | '/errors/404' | '/errors/500'
   id:
     | '__root__'
     | '/_authenticated'
     | '/_blank'
+    | '/_authenticated/users'
     | '/_blank/login'
     | '/errors/403'
     | '/errors/404'
@@ -150,14 +166,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlankLoginRouteImport
       parentRoute: typeof BlankRoute
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

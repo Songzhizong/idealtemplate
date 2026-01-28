@@ -263,7 +263,7 @@ pnpm test:watch
 
 ## 📚 更多文档
 
-- [完整技术规范](Specifications.md) - 详细的架构设计和开发规范
+- [完整技术规范](docs/Specifications.md) - 详细的架构设计和开发规范
 - [shadcn/ui 文档](https://ui.shadcn.com/) - UI 组件使用指南
 - [TanStack Router 文档](https://tanstack.com/router) - 路由系统文档
 - [TanStack Query 文档](https://tanstack.com/query) - 数据获取和缓存

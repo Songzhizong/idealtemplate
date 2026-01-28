@@ -150,6 +150,12 @@ export function flattenColorPalette(palette: ColorPalette): Record<string, strin
 	vars["--info"] = hexToHSL(palette.status.info.default)
 	vars["--info-foreground"] = hexToHSL(palette.status.info.fg)
 
+	// Table component colors
+	vars["--table-header-bg"] = hexToHSL(palette.component.table.headerBg)
+	vars["--table-row-hover"] = hexToHSL(palette.component.table.rowHover)
+	vars["--table-row-striped"] = hexToHSL(palette.component.table.rowStriped)
+	vars["--table-border"] = hexToHSL(palette.component.table.border)
+
 	return vars
 }
 

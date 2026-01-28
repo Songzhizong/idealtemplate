@@ -111,6 +111,12 @@
 	--info-subtle: 217 91% 96%;
 	--info-on-subtle: 217 91% 30%;
 
+	/* Table Component Variables */
+	--table-header-bg: 210 40% 98%;
+	--table-row-hover: 217 91% 96%;
+	--table-row-striped: 0 0% 100%;
+	--table-border: 240 5.9% 90%;
+
 	/* Utility Variables */
 	--ink-900: 240 5.9% 10%;
 	--ink-700: 215 20% 35%;
@@ -188,6 +194,12 @@
 	--info-foreground: 0 0% 100%;
 	--info-subtle: 217 91% 15%;
 	--info-on-subtle: 217 91% 80%;
+
+	/* Table Component Variables - Dark Mode */
+	--table-header-bg: 240 7.7% 10.2%;
+	--table-row-hover: 217 91% 15%;
+	--table-row-striped: 240 7.7% 10.2%;
+	--table-border: 240 3.7% 15.9%;
 
 	/* Utility Variables - Dark Mode */
 	--ink-900: 210 40% 98%;
