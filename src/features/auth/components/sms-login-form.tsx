@@ -156,7 +156,7 @@ export function SmsLoginForm() {
 										<img
 											src={captcha.imageBase64}
 											alt="Captcha"
-											className="h-full w-full object-cover"
+											className="h-full w-full object-cover dark:invert"
 										/>
 									</button>
 								) : null}
