@@ -1,8 +1,8 @@
 import { addMinutes } from "date-fns"
 import { delay, HttpResponse, http } from "msw"
+import { authHandlers } from "@/features/auth/api/auth.mock"
 import { DashboardStatsSchema } from "@/features/dashboard/api/get-stats"
 import { ProfileSchema, UpdateProfileResponseSchema } from "@/features/dashboard/api/update-profile"
-import { env } from "@/lib/env"
 
 const mockStats = DashboardStatsSchema.parse({
 	totalUsers: 32480,
@@ -13,11 +13,13 @@ const mockStats = DashboardStatsSchema.parse({
 })
 
 export const handlers = [
-	http.get(`${env.VITE_API_BASE_URL}/stats`, async () => {
+	...authHandlers,
+	// 使用通配符或相对路径匹配，确保无论是否经过代理都能拦截
+	http.get("*/stats", async () => {
 		await delay(400)
 		return HttpResponse.json(mockStats)
 	}),
-	http.post(`${env.VITE_API_BASE_URL}/profile`, async ({ request }) => {
+	http.post("*/profile", async ({ request }) => {
 		const body = await request.json()
 		const profile = ProfileSchema.parse(body)
 

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { z } from "zod"
 import { api } from "@/lib/api-client"
 
@@ -34,19 +34,14 @@ const checkCaptcha = async (request: CheckCaptchaRequest): Promise<CheckCaptchaR
 }
 
 /**
- * React Query Mutation Hook - 检查是否需要验证码
+ * React Query Hook - 检查是否需要验证码
  * @example
- * const checkCaptchaMutation = useCheckCaptcha()
- * checkCaptchaMutation.mutate({ username }, {
- *   onSuccess: (data) => {
- *     if (data.needCaptcha) {
- *       // Show captcha input
- *     }
- *   }
- * })
+ * const { data } = useCheckCaptcha(username)
  */
-export const useCheckCaptcha = () => {
-	return useMutation({
-		mutationFn: checkCaptcha,
+export const useCheckCaptcha = (username: string) => {
+	return useQuery({
+		queryKey: ["captcha-check", username],
+		queryFn: () => checkCaptcha({ username }),
+		enabled: !!username,
 	})
 }

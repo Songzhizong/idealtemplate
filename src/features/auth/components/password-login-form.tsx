@@ -25,10 +25,8 @@ import { SelectAccountDialog } from "./select-account-dialog"
 export function PasswordLoginForm() {
 	const [showPassword, setShowPassword] = useState(false)
 	const [loginResponse, setLoginResponse] = useState<LoginResponse | null>(null)
-	const [needCaptcha, setNeedCaptcha] = useState(false)
 
 	const { data: captcha, refetch: refetchCaptcha, isLoading: captchaLoading } = useGetCaptcha()
-	const checkCaptchaMutation = useCheckCaptcha()
 	const loginMutation = usePasswordLogin()
 	const { handleLoginSuccess } = useLoginHandler()
 
@@ -42,20 +40,9 @@ export function PasswordLoginForm() {
 		},
 	})
 
-	// Check if captcha is needed on mount
-	useEffect(() => {
-		const username = form.getValues("username")
-		if (username) {
-			checkCaptchaMutation.mutate(
-				{ username },
-				{
-					onSuccess: (data) => {
-						setNeedCaptcha(data.required)
-					},
-				},
-			)
-		}
-	}, [checkCaptchaMutation.mutate, form.getValues])
+	const username = form.watch("username")
+	const { data: checkCaptchaData } = useCheckCaptcha(username)
+	const needCaptcha = !!checkCaptchaData?.required
 
 	// Load captcha when needed
 	useEffect(() => {

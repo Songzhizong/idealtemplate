@@ -38,7 +38,7 @@ export function useLoginHandler() {
 				if (permissionsResult.data) {
 					authStore.setPermissions(permissionsResult.data)
 
-					toast.success("Login successful!")
+					toast.success("登录成功!")
 
 					// Redirect to home or intended page
 					void navigate({ to: "/" })
