@@ -382,8 +382,8 @@ export const coreBlue: ThemePreset = {
         canvas: "#0b1220",
         layout: "#0f172a",
         container: "#111827",
-        surface: "#162032",
-        elevated: "#1b263b",
+        surface: "#1e293b",
+        elevated: "#2d3748",
 
         muted: {
           default: "#1f2937",
