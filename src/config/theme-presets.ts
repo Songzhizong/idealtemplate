@@ -7,11 +7,13 @@ import type { ThemePreset, ThemeConfig } from "@/types/theme"
 import { crimsonFlame } from "./presets/crimson-flame"
 import { emeraldGreen } from "./presets/emerald-green"
 import { coreBlue } from "./presets/core-blue"
+import { wisdomPurple } from "@/config/presets/wisdom-purple.ts";
 
 export const themePresets: ThemePreset[] = [
   coreBlue,
   crimsonFlame,
   emeraldGreen,
+  wisdomPurple,
 ]
 
 export const defaultThemeSettings: ThemeConfig = {
