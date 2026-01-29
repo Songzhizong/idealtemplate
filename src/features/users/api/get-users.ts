@@ -12,7 +12,7 @@ export interface GetUsersParams {
 	mfaEnabled?: string
 	email?: string
 	phone?: string
-	userGroup?: string
+	userGroups?: string // 更新为 userGroups
 	sorting?: {
 		field?: string
 		order?: "asc" | "desc"
@@ -30,7 +30,7 @@ export async function getUsers(params: GetUsersParams): Promise<PageInfo<User>> 
 	if (params.mfaEnabled && params.mfaEnabled !== "all") searchParams.mfaEnabled = params.mfaEnabled
 	if (params.email) searchParams.email = params.email
 	if (params.phone) searchParams.phone = params.phone
-	if (params.userGroup && params.userGroup !== "all") searchParams.userGroup = params.userGroup
+	if (params.userGroups && params.userGroups !== "all") searchParams.userGroups = params.userGroups
 
 	// 添加排序参数
 	if (params.sorting?.field && params.sorting?.order) {

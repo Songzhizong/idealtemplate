@@ -18,7 +18,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
-import { getUsers, type User, UserGroupEnum, UserStatusEnum } from "@/features/users"
+import { Switch } from "@/components/ui/switch"
+import { getUsers, type User, UserGroupEnum } from "@/features/users"
+import { useThemeStore } from "@/hooks/use-theme-store"
+
+// 用户组颜色映射函数
+const getUserGroupColor = (group: string, chartColors: string[]) => {
+	const groupKeys = Object.keys(UserGroupEnum)
+	const index = groupKeys.indexOf(group)
+	return chartColors[index % chartColors.length] || chartColors[0]
+}
 
 const columns: ColumnDef<User>[] = [
 	{
@@ -28,22 +37,42 @@ const columns: ColumnDef<User>[] = [
 		enableSorting: true,
 		cell: ({ row }) => (
 			<div className="space-y-1">
-				<div className="font-medium text-primary">{row.original.username}</div>
+				<div className="font-medium text-foreground">{row.original.username}</div>
 				<div className="text-sm text-muted-foreground">{row.original.email}</div>
 			</div>
 		),
 	},
 	{
-		accessorKey: "userGroup",
+		accessorKey: "userGroups",
 		header: "用户组",
-		size: 120,
-		enableSorting: false, // 禁用排序
+		size: 180,
+		enableSorting: false,
 		cell: ({ row }) => {
-			const group = row.original.userGroup as keyof typeof UserGroupEnum
+			const { getActivePreset, getEffectiveMode } = useThemeStore()
+			const preset = getActivePreset()
+			const mode = getEffectiveMode()
+			const chartColors = preset?.schemes[mode]?.charts.categorical || []
+
 			return (
-				<Badge variant="outline" className="font-normal">
-					{UserGroupEnum[group] || row.original.userGroup}
-				</Badge>
+				<div className="flex flex-wrap gap-1">
+					{row.original.userGroups.map((group) => {
+						const groupKey = group as keyof typeof UserGroupEnum
+						const color = getUserGroupColor(group, chartColors)
+						return (
+							<Badge
+								key={group}
+								variant="outline"
+								className="font-normal border-0"
+								style={{
+									backgroundColor: `${color}15`,
+									color: color,
+								}}
+							>
+								{UserGroupEnum[groupKey] || group}
+							</Badge>
+						)
+					})}
+				</div>
 			)
 		},
 	},
@@ -75,9 +104,11 @@ const columns: ColumnDef<User>[] = [
 			const status = row.original.status
 			return (
 				<div className="flex justify-center">
-					<Badge variant={status === "active" ? "default" : "secondary"} className="font-normal">
-						{UserStatusEnum[status]}
-					</Badge>
+					<Switch
+						checked={status === "active"}
+						disabled
+						className="data-[state=checked]:bg-success data-[state=unchecked]:bg-muted"
+					/>
 				</div>
 			)
 		},
@@ -93,7 +124,14 @@ const columns: ColumnDef<User>[] = [
 			const enabled = row.original.mfaEnabled
 			return (
 				<div className="flex justify-center">
-					<Badge variant={enabled ? "default" : "secondary"} className="font-normal">
+					<Badge
+						variant={enabled ? "default" : "secondary"}
+						className={`font-normal ${
+							enabled
+								? "bg-success text-success-foreground hover:bg-success/90"
+								: "bg-muted text-muted-foreground"
+						}`}
+					>
 						{enabled ? "已启用" : "未启用"}
 					</Badge>
 				</div>
@@ -182,13 +220,13 @@ export function UsersTable() {
 				mfaEnabled: mfaFilter,
 				email: emailInputRef.current?.value || "",
 				phone: phoneInputRef.current?.value || "",
-				userGroup: groupFilter,
+				userGroups: groupFilter, // 确保参数名匹配
 			}),
 		transform: (response) => response,
 		columns: memoizedColumns,
 		initialPageSize: 10,
 		tableId: "users-table",
-		enableServerSorting: true, // 启用服务端排序
+		enableServerSorting: true,
 	})
 
 	const handleSearch = () => {
