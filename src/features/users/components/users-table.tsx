@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { parseAsInteger, parseAsString, useQueryStates } from "nuqs"
+import { useEffect, useMemo } from "react"
 import { DataTableFilterBar, PaginatedTable, useTablePagination } from "@/components/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -199,38 +200,88 @@ const columns: ColumnDef<User>[] = [
 ]
 
 export function UsersTable() {
-	const [statusFilter, setStatusFilter] = useState<string>("all")
-	const [mfaFilter, setMfaFilter] = useState<string>("all")
-	const [groupFilter, setGroupFilter] = useState<string>("all")
-
-	// Input refs (uncontrolled for better performance)
-	const inputRef = useRef<HTMLInputElement>(null)
-	const emailInputRef = useRef<HTMLInputElement>(null)
-	const phoneInputRef = useRef<HTMLInputElement>(null)
+	// URL state management with nuqs
+	const [queryParams, setQueryParams] = useQueryStates({
+		// Search filters
+		username: parseAsString.withDefault(""),
+		email: parseAsString.withDefault(""),
+		phone: parseAsString.withDefault(""),
+		status: parseAsString.withDefault("all"),
+		mfaEnabled: parseAsString.withDefault("all"),
+		userGroups: parseAsString.withDefault("all"),
+		// Pagination
+		page: parseAsInteger.withDefault(1),
+		pageSize: parseAsInteger.withDefault(10),
+		// Sorting
+		sortBy: parseAsString.withDefault(""),
+		sortOrder: parseAsString.withDefault(""),
+	})
 
 	const memoizedColumns = useMemo(() => columns, [])
 
 	const table = useTablePagination({
-		queryKey: ["users"],
-		queryFn: (params) =>
-			getUsers({
-				...params,
-				username: inputRef.current?.value || "",
-				status: statusFilter,
-				mfaEnabled: mfaFilter,
-				email: emailInputRef.current?.value || "",
-				phone: phoneInputRef.current?.value || "",
-				userGroups: groupFilter, // 确保参数名匹配
-			}),
+		queryKey: ["users", queryParams],
+		queryFn: (params) => {
+			const getUsersParams = {
+				pageNumber: params.pageNumber,
+				pageSize: params.pageSize,
+			} as const
+
+			// Only add optional parameters if they have values
+			const optionalParams: Record<string, string> = {}
+			if (queryParams.username) optionalParams.username = queryParams.username
+			if (queryParams.status !== "all") optionalParams.status = queryParams.status
+			if (queryParams.mfaEnabled !== "all") optionalParams.mfaEnabled = queryParams.mfaEnabled
+			if (queryParams.email) optionalParams.email = queryParams.email
+			if (queryParams.phone) optionalParams.phone = queryParams.phone
+			if (queryParams.userGroups !== "all") optionalParams.userGroups = queryParams.userGroups
+
+			return getUsers({
+				...getUsersParams,
+				...optionalParams,
+				...(params.sorting && { sorting: params.sorting }),
+			})
+		},
 		transform: (response) => response,
 		columns: memoizedColumns,
-		initialPageSize: 10,
+		initialPageSize: queryParams.pageSize,
+		initialPage: queryParams.page,
 		tableId: "users-table",
 		enableServerSorting: true,
 	})
 
+	// Sync URL params with table state
+	useEffect(() => {
+		if (table.pagination.pageNumber !== queryParams.page) {
+			setQueryParams({ page: table.pagination.pageNumber })
+		}
+	}, [table.pagination.pageNumber, queryParams.page, setQueryParams])
+
+	useEffect(() => {
+		if (table.pagination.pageSize !== queryParams.pageSize) {
+			setQueryParams({ pageSize: table.pagination.pageSize })
+		}
+	}, [table.pagination.pageSize, queryParams.pageSize, setQueryParams])
+
+	// Sync sorting with URL
+	useEffect(() => {
+		const currentSort = table.sorting[0]
+		const urlSortBy = currentSort?.id || ""
+		const urlSortOrder = currentSort?.desc ? "desc" : "asc"
+
+		if (urlSortBy !== queryParams.sortBy || (urlSortBy && urlSortOrder !== queryParams.sortOrder)) {
+			setQueryParams({
+				sortBy: urlSortBy,
+				sortOrder: urlSortBy ? urlSortOrder : "",
+			})
+		}
+	}, [table.sorting, queryParams.sortBy, queryParams.sortOrder, setQueryParams])
+
 	const handleSearch = () => {
-		// Just trigger a refetch, the queryFn will use the latest input states
+		// Reset to first page when searching
+		if (queryParams.page !== 1) {
+			setQueryParams({ page: 1 })
+		}
 		void table.refetch()
 	}
 
@@ -241,16 +292,27 @@ export function UsersTable() {
 	}
 
 	const handleReset = () => {
-		if (inputRef.current) inputRef.current.value = ""
-		if (emailInputRef.current) emailInputRef.current.value = ""
-		if (phoneInputRef.current) phoneInputRef.current.value = ""
-		setStatusFilter("all")
-		setMfaFilter("all")
-		setGroupFilter("all")
-		// After resetting state, we need to refetch
-		// Since setState is async, we might need a way to ensure refetch uses new values.
-		// Actually, useTablePagination's refetch will use whatever is in queryFn at that moment.
-		setTimeout(() => void table.refetch(), 0)
+		setQueryParams({
+			username: "",
+			email: "",
+			phone: "",
+			status: "all",
+			mfaEnabled: "all",
+			userGroups: "all",
+			page: 1,
+			sortBy: "",
+			sortOrder: "",
+		})
+	}
+
+	const handlePageChange = (page: number) => {
+		setQueryParams({ page })
+		table.setPage(page)
+	}
+
+	const handlePageSizeChange = (pageSize: number) => {
+		setQueryParams({ pageSize, page: 1 }) // Reset to first page when changing page size
+		table.setPageSize(pageSize)
 	}
 
 	return (
@@ -264,8 +326,8 @@ export function UsersTable() {
 				empty={table.empty}
 				emptyText="暂无数据"
 				pagination={table.pagination}
-				onPageChange={table.setPage}
-				onPageSizeChange={table.setPageSize}
+				onPageChange={handlePageChange}
+				onPageSizeChange={handlePageSizeChange}
 				pageSizeOptions={[10, 20, 30, 50, 100]}
 				showTotal={true}
 				enableRowSelection={false}
@@ -292,7 +354,8 @@ export function UsersTable() {
 								<div className="flex flex-col gap-2">
 									<Input
 										placeholder="搜索手机号..."
-										ref={phoneInputRef}
+										value={queryParams.phone}
+										onChange={(e) => setQueryParams({ phone: e.target.value })}
 										className="h-9"
 										onKeyDown={handleKeyDown}
 									/>
@@ -300,18 +363,16 @@ export function UsersTable() {
 								<div className="flex flex-col gap-2">
 									<Input
 										placeholder="搜索邮箱..."
-										ref={emailInputRef}
+										value={queryParams.email}
+										onChange={(e) => setQueryParams({ email: e.target.value })}
 										className="h-9"
 										onKeyDown={handleKeyDown}
 									/>
 								</div>
 								<div className="flex flex-col gap-2">
 									<Select
-										value={groupFilter}
-										onValueChange={(v) => {
-											setGroupFilter(v)
-											setTimeout(() => void table.refetch(), 0)
-										}}
+										value={queryParams.userGroups}
+										onValueChange={(v) => setQueryParams({ userGroups: v, page: 1 })}
 									>
 										<SelectTrigger className="h-9">
 											<SelectValue placeholder="全部用户组" />
@@ -328,11 +389,8 @@ export function UsersTable() {
 								</div>
 								<div className="flex flex-col gap-2">
 									<Select
-										value={mfaFilter}
-										onValueChange={(v) => {
-											setMfaFilter(v)
-											setTimeout(() => void table.refetch(), 0)
-										}}
+										value={queryParams.mfaEnabled}
+										onValueChange={(v) => setQueryParams({ mfaEnabled: v, page: 1 })}
 									>
 										<SelectTrigger className="h-9">
 											<SelectValue placeholder="MFA 状态" />
@@ -350,16 +408,14 @@ export function UsersTable() {
 						<div className="flex items-center gap-3">
 							<Input
 								placeholder="搜索 ID / 名称 / 账号..."
-								ref={inputRef}
+								value={queryParams.username}
+								onChange={(e) => setQueryParams({ username: e.target.value })}
 								className="h-9 w-64 lg:w-80"
 								onKeyDown={handleKeyDown}
 							/>
 							<Select
-								value={statusFilter}
-								onValueChange={(v) => {
-									setStatusFilter(v)
-									setTimeout(() => void table.refetch(), 0)
-								}}
+								value={queryParams.status}
+								onValueChange={(v) => setQueryParams({ status: v, page: 1 })}
 							>
 								<SelectTrigger className="h-9 w-32">
 									<SelectValue placeholder="状态" />
