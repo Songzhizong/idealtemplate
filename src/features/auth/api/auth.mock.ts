@@ -1,5 +1,6 @@
 import { delay, HttpResponse, http } from "msw"
-import type { UserProfile } from "./get-current-user"
+import { mockRegistry } from "@/mocks/registry"
+import type { UserProfile } from "@/types/auth"
 import { LoginResponseType } from "./login"
 
 const MOCK_USER: UserProfile = {
@@ -74,3 +75,6 @@ export const authHandlers = [
 		})
 	}),
 ]
+
+// 主动注入
+mockRegistry.register(...authHandlers)

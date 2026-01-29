@@ -1,7 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { UserProfile } from "../api/get-current-user"
-import type { Permission } from "../types"
+import type { Permission, UserProfile } from "@/types/auth"
 
 type AuthState = {
 	// State
@@ -29,6 +28,7 @@ type AuthState = {
  * Auth Store - 认证状态管理
  *
  * 这是一个 Zustand Store，既可以作为 React Hook 使用，也可以通过 .getState() 在任何地方使用。
+ * 属于全局共享基础设施，不依赖于任何 feature。
  *
  * @example
  * // 在 React 组件中使用（作为 Hook）

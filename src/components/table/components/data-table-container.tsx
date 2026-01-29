@@ -16,8 +16,9 @@ export interface DataTableContainerProps {
 	pagination?: ReactNode
 	/**
 	 * Container height (e.g., "calc(100vh - 200px)")
+	 * If not provided, it will try to fill the available space (flex-1)
 	 */
-	height: string
+	height?: string
 	/**
 	 * Additional class names
 	 */
@@ -36,11 +37,14 @@ export function DataTableContainer({
 	className,
 }: DataTableContainerProps) {
 	return (
-		<div className={cn("flex flex-col gap-4", className)}>
+		<div className={cn("flex flex-col gap-4", !height && "min-h-0 flex-1", className)}>
 			{toolbar && <div className="shrink-0">{toolbar}</div>}
 			<div
-				className="flex flex-col rounded-lg border border-[hsl(var(--table-border))] bg-background overflow-hidden"
-				style={{ height }}
+				className={cn(
+					"flex flex-col overflow-hidden rounded-lg border border-[hsl(var(--table-border))] bg-card",
+					!height && "min-h-0 flex-1",
+				)}
+				style={height ? { height } : undefined}
 			>
 				{table}
 				{pagination && (

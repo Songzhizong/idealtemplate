@@ -1,9 +1,9 @@
 import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
-import { useUserProfile } from "@/features/auth/api/get-current-user"
+import { useUserProfile } from "@/lib/auth-api/get-current-user"
 import { usePermissions } from "@/features/auth/api/get-permissions"
 import { type LoginResponse, LoginResponseType } from "@/features/auth/api/login"
-import { useAuthStore } from "@/features/auth/stores/auth-store"
+import { useAuthStore } from "@/lib/auth-store"
 
 /**
  * Hook to handle successful login flow

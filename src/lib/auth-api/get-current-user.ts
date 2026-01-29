@@ -1,39 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { z } from "zod"
 import { api } from "@/lib/api-client"
-
-/**
- * Tenant Info Schema
- * 租户信息
- */
-const TenantInfoSchema = z.object({
-	id: z.string(), // Long type from backend
-	name: z.string(),
-	abbreviation: z.string(),
-	blocked: z.boolean(),
-})
-
-export type TenantInfo = z.infer<typeof TenantInfoSchema>
-
-/**
- * User Profile Schema
- * 用户个人信息
- */
-export const UserProfileSchema = z.object({
-	userId: z.string(), // Long type from backend
-	containerId: z.string().nullable(),
-	name: z.string(),
-	account: z.string().nullable(),
-	phone: z.string().nullable(),
-	email: z.string().nullable(),
-	mfaEnabled: z.boolean(),
-	tenantId: z.string().nullable(),
-	tenantName: z.string().nullable(),
-	tenantAbbreviation: z.string().nullable(),
-	accessibleTenants: z.array(TenantInfoSchema),
-})
-
-export type UserProfile = z.infer<typeof UserProfileSchema>
+import { type UserProfile, UserProfileSchema } from "@/types/auth"
 
 /**
  * Fetcher - 获取当前登录用户个人信息

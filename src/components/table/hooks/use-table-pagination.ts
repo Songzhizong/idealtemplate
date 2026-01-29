@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import type { ColumnDef, RowSelectionState, SortingState, Updater } from "@tanstack/react-table"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { PageInfo } from "@/types/pagination"
@@ -149,6 +149,7 @@ export function useTablePagination<TData, TResponse = PageInfo<TData>>(
 				...(enableServerSorting && sortingParams && { sorting: sortingParams }),
 				...(enableServerFiltering && Object.keys(filters).length > 0 && { filters }),
 			}),
+		placeholderData: keepPreviousData,
 	})
 
 	// Default transform function

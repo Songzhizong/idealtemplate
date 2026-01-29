@@ -20,7 +20,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useLogoutHandler } from "@/features/auth"
+import { useLogoutHandler } from "@/hooks/use-logout-handler"
 
 export function UserMenu() {
 	const { handleLogout } = useLogoutHandler()

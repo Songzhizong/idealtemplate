@@ -30,7 +30,8 @@ Your mindset maps Backend concepts (DTO, Controller, Service) to Frontend patter
 
 ## Architecture Guidelines (Feature-Based / DDD)
 1. **Feature as Package**: Treat each feature in `src/features/` as an isolated unit.
-  - **Colocation**: Keep API, types, components, and hooks within the feature directory.
+  - **Colocation**: Keep API, types, components, hooks, and **mocks** within the feature directory.
+  - **Mock Injection**: Mock code MUST be written in the feature's `api` or `mocks` directory using the `*.mock.ts` pattern and register themselves via the `mockRegistry`. Global `handlers.ts` is for auto-discovery only.
   - **Public API**: Export ONLY necessary items via `index.ts`. Other modules MUST import from `@/features/{name}`.
 2. **Schema First (DTO)**: Define the data structure using Zod in the `api` folder before writing logic.
 3. **API Layer**:

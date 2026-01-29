@@ -5,8 +5,7 @@
  * 这里是配置跨层依赖的正确位置
  */
 
-import { authStore } from "@/features/auth/stores/auth-store"
-import { getTenantId } from "@/features/auth/utils/tenant"
+import { authStore } from "@/lib/auth-store"
 import { configureApiClient } from "@/lib/api-client"
 
 /**
@@ -16,7 +15,10 @@ import { configureApiClient } from "@/lib/api-client"
 export function initializeApiClient() {
 	configureApiClient({
 		getToken: () => authStore.getState().token,
-		getTenantId,
+		getTenantId: () => {
+			const state = authStore.getState()
+			return state.tenantId ?? state.user?.tenantId ?? null
+		},
 		onUnauthorized: () => {
 			authStore.getState().logout()
 			const currentPath = window.location.pathname

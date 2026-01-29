@@ -1,224 +1,108 @@
-# Table Components
+# 表格组件速查手册 (Cheatsheet)
 
-表格组件库,提供完整的数据表格解决方案,支持分页、排序、筛选、列可见性控制等功能。
+本手册旨在帮助开发人员和 AI 快速掌握项目中表格组件的使用。
 
-## 目录结构
+## 📦 核心组件
 
-```
-src/components/table/
-├── components/          # UI 组件
-│   ├── data-table.tsx                  # 核心表格组件
-│   ├── data-table-toolbar.tsx          # 工具栏(搜索、筛选、操作)
-│   ├── data-table-pagination.tsx       # 分页组件
-│   ├── data-table-column-toggle.tsx    # 列可见性控制
-│   ├── data-table-container.tsx        # 容器布局
-│   ├── paginated-table.tsx             # 完整分页表格
-│   ├── table-compound.tsx              # 复合组件模式
-│   └── index.ts
-├── hooks/               # 表格相关 Hooks
-│   ├── use-base-table.ts               # 基础表格逻辑
-│   ├── use-table.ts                    # 简单表格 Hook
-│   ├── use-table-pagination.ts         # 分页表格 Hook
-│   ├── use-table-query.ts              # 查询表格 Hook
-│   ├── use-table-operate.ts            # CRUD 操作 Hook
-│   └── index.ts
-├── context/             # 上下文
-│   ├── table-context.tsx               # 表格状态共享
-│   └── index.ts
-└── index.ts             # 统一导出
-```
+项目提供两种使用模式：**快捷模式** (PaginatedTable) 和 **灵活模式** (TableCompound)。
 
-## 使用方式
+### 1. 快捷模式 (PaginatedTable)
+适用于标准的分页列表，配置简单，一站式解决。
 
-### 1. 简单分页表格 (推荐)
+```tsx
+import { PaginatedTable, useTablePagination } from "@/components/table"
 
-```typescript
-import { PaginatedTable } from "@/components/table"
-import { useTablePagination } from "@/hooks"
+export function UserList() {
+  const table = useTablePagination({
+    queryKey: ["users"],
+    queryFn: ({ pageNumber, pageSize }) => getUsers({ page: pageNumber, size: pageSize }),
+    columns,
+    tableId: "user-list", // 用于持久化列配置
+  })
 
-function UsersTable() {
-	const table = useTablePagination({
-		queryKey: ["users"],
-		queryFn: getUsers,
-		columns,
-		initialPageSize: 10,
-		tableId: "users-table", // 用于持久化列设置
-		enableServerSorting: true,
-	})
-
-	return (
-		<PaginatedTable
-			{...table}
-			toolbar={
-				<DataTableToolbar
-					filterPlaceholder="搜索用户..."
-					filterValue={searchValue}
-					onFilterChange={setSearchValue}
-					onRefresh={table.refetch}
-				/>
-			}
-		/>
-	)
+  return (
+    <PaginatedTable
+      {...table}
+      columns={columns}
+      emptyText="暂无用户"
+      onPageChange={table.setPage}
+      onPageSizeChange={table.setPageSize}
+    />
+  )
 }
 ```
 
-### 2. 复合组件模式 (灵活布局)
+### 2. 灵活模式 (TableCompound)
+适用于需要自定义工具栏、布局或多个组件组合的场景。
 
-```typescript
-import { TableCompound } from "@/components/table"
-import { useTablePagination } from "@/hooks"
+```tsx
+import { TableCompound, useTablePagination } from "@/components/table"
 
-function CustomTable() {
-	const table = useTablePagination({
-		queryKey: ["data"],
-		queryFn: fetchData,
-		columns,
-	})
+export function ComplexList() {
+  const table = useTablePagination({ /* ...config */ })
 
-	return (
-		<TableCompound.Root {...table}>
-			<TableCompound.Container height="calc(100vh - 300px)">
-				<TableCompound.Toolbar
-					filterPlaceholder="搜索..."
-					actions={
-						<Button onClick={handleAdd}>
-							<Plus className="mr-2 h-4 w-4" />
-							新增
-						</Button>
-					}
-				/>
-				<TableCompound.Table
-					columns={columns}
-					data={table.data}
-					loading={table.loading}
-					empty={table.empty}
-					emptyText="暂无数据"
-					columnVisibility={table.columnVisibility}
-				/>
-				<TableCompound.Pagination />
-			</TableCompound.Container>
-		</TableCompound.Root>
-	)
+  return (
+    <TableCompound.Root {...table}>
+      <TableCompound.Container 
+        toolbar={<TableCompound.Toolbar left={<div>左侧自定义</div>} />}
+        pagination={<TableCompound.Pagination />}
+      >
+        <TableCompound.Table 
+          columns={columns} 
+          onRowClick={(row) => console.log(row)} 
+        />
+      </TableCompound.Container>
+    </TableCompound.Root>
+  )
 }
 ```
 
-### 3. 列配置
+---
 
-```typescript
-import type { ColumnDef } from "@tanstack/react-table"
-import type { TableColumnMeta } from "@/hooks"
+## 🛠 核心 Hook：`useTablePagination`
 
+`useTablePagination` 是表格的状态中心，它处理：
+- **数据获取**: 集成 TanStack Query。
+- **分页控制**: 当前页、页码大小。
+- **列控制**: 显示/隐藏、顺序、持久化（需 `tableId`）。
+- **选择**: 行选择状态。
+
+### 返回值常用属性
+- `data`: 当前页数据。
+- `loading` / `fetching`: 加载状态。
+- `pagination`: `{ pageNumber, pageSize, totalElements, ... }`。
+- `setPage`, `setPageSize`: 切换分页函数。
+- `columnChecks`, `setColumnChecks`: 用于 `DataTableColumnToggle`。
+- `rowSelection`, `onRowSelectionChange`: 用于行选择。
+
+---
+
+## 📐 列定义 (Column Definition)
+
+列定义遵循 [TanStack Table V8](https://tanstack.com/table/v8) 规范，并进行了增强。
+
+### TableColumnMeta
+通过 `column.meta` 扩展功能：
+- `label`: 在列显隐设置中显示的名称。
+- `hideInSetting`: 是否在列设置中隐藏。
+
+```tsx
 const columns: ColumnDef<User>[] = [
-	{
-		accessorKey: "name",
-		header: "姓名",
-		meta: {
-			label: "用户姓名", // 列设置中显示的名称
-		} as TableColumnMeta,
-	},
-	{
-		accessorKey: "email",
-		header: "邮箱",
-		meta: {
-			label: "电子邮箱",
-			align: "center", // 对齐方式
-		} as TableColumnMeta,
-	},
-	{
-		id: "actions",
-		header: "操作",
-		meta: {
-			hideInSetting: true, // 不在列设置中显示
-		} as TableColumnMeta,
-	},
+  {
+    accessorKey: "name",
+    header: "姓名",
+    meta: { label: "用户姓名" } // 增强元数据
+  },
+  // ...
 ]
 ```
 
-## Hooks API
+---
 
-### useTablePagination
+## 💡 AI 使用指南
 
-完整的分页表格 Hook,集成 TanStack Query。
-
-```typescript
-const table = useTablePagination({
-	queryKey: ["users"],
-	queryFn: getUsers,
-	columns,
-	initialPage: 1,
-	initialPageSize: 10,
-	tableId: "users-table", // 可选,用于持久化设置
-	enableServerSorting: true, // 启用服务端排序
-	enableServerFiltering: true, // 启用服务端筛选
-})
-```
-
-返回值:
-- `data`: 表格数据
-- `loading`: 加载状态
-- `fetching`: 刷新状态
-- `pagination`: 分页信息
-- `setPage`: 设置页码
-- `setPageSize`: 设置每页条数
-- `columnChecks`: 列可见性状态
-- `setColumnChecks`: 更新列可见性
-- `columnVisibility`: TanStack Table 格式的列可见性
-- `sorting`: 排序状态
-- `setSorting`: 设置排序
-- `refetch`: 刷新数据
-
-### useTable
-
-简单表格 Hook,适用于客户端数据。
-
-```typescript
-const table = useTable({
-	columns,
-	initialData: [],
-	tableId: "simple-table",
-})
-```
-
-### useTableOperate
-
-CRUD 操作 Hook。
-
-```typescript
-const operate = useTableOperate({
-	data: table.data,
-	idKey: "id",
-	onRefresh: table.refetch,
-})
-
-// 使用
-operate.handleAdd()
-operate.handleEdit(id)
-operate.handleView(id)
-```
-
-## 特性
-
-- ✅ 服务端分页、排序、筛选
-- ✅ 列可见性控制(拖拽排序)
-- ✅ 持久化列设置(localStorage)
-- ✅ 行选择
-- ✅ 固定表头和分页
-- ✅ 加载和空状态
-- ✅ 国际化支持
-- ✅ 完全类型安全
-- ✅ 复合组件模式
-
-## 导入路径
-
-所有表格相关的组件和 Hooks 都可以从以下路径导入:
-
-```typescript
-// 直接从 table 模块导入
-import { PaginatedTable, DataTableToolbar, TableCompound } from "@/components/table"
-
-// 或从 hooks 导入(已重新导出)
-import { useTablePagination, useTable } from "@/hooks"
-
-// 或从 common 导入(已重新导出,向后兼容)
-import { PaginatedTable } from "@/components/common"
-```
+1. **优先推荐**: 只要是带分页的列表，优先推荐使用 `useTablePagination`。
+2. **选择列**: 如果需要首列复选框，使用 `createSelectionColumn()` 辅助函数。
+3. **元数据**: 必须为 columns 提供 `meta.label`，否则 `DataTableColumnToggle` 将无法显示正确的中文列名。
+4. **ID 指定**: 为 `useTablePagination` 提供唯一的 `tableId`，以便用户刷新页面后保留列显隐首选项。
+5. **高度调整**: `TableCompound.Container` 默认高度为 `calc(100vh - 300px)`，可根据页面布局调整。

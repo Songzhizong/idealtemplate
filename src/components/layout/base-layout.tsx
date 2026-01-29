@@ -63,10 +63,10 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 				</SidebarContent>
 			</Sidebar>
 
-			<div className="flex min-h-screen flex-1 flex-col">
+			<div className="flex h-screen flex-1 flex-col overflow-hidden">
 				<Header navItems={ALL_NAV} onSearchOpen={() => setSearchOpen(true)} />
 
-				<main className="flex-1 overflow-hidden relative">
+				<main className="flex-1 overflow-y-auto relative">
 					<div
 						key={pathname}
 						className={cn(

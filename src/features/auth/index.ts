@@ -14,7 +14,7 @@ export {
 // ============================================
 // API Hooks (Public API)
 // ============================================
-export { useUserProfile } from "./api/get-current-user"
+export { useUserProfile } from "@/lib/auth-api/get-current-user"
 export { type PermissionIdents, usePermissions } from "./api/get-permissions"
 export {
 	type ChangePasswordLoginRequest,
@@ -53,7 +53,7 @@ export {
 	useSmsCodeLogin,
 	type VisibleToken,
 } from "./api/login"
-export { useLogout } from "./api/logout"
+export { useLogout } from "@/lib/auth-api/logout"
 
 // ============================================
 // Components (Public API)
@@ -64,23 +64,24 @@ export { PermissionGuard } from "./components/permission-guard"
 // ============================================
 // Hooks (Public API)
 // ============================================
-export { useAuth } from "./hooks/use-auth"
+export { useAuth } from "@/hooks/use-auth"
 export { useLoginHandler } from "./hooks/use-login-handler"
-export { useLogoutHandler } from "./hooks/use-logout-handler"
+export { useLogoutHandler } from "@/hooks/use-logout-handler"
 
 // ============================================
 // Stores (Public API)
 // ============================================
-export { useAuthStore } from "./stores/auth-store"
+export { useAuthStore, authStore } from "@/lib/auth-store"
 
 // ============================================
 // Types & Schemas (Public API)
 // ============================================
-export type { AuthResponse, Permission, User } from "./types"
-export { AuthResponseSchema, PermissionSchema, UserSchema } from "./types"
+export type { Permission, UserProfile as User } from "@/types/auth"
+export { PermissionSchema, UserProfileSchema as UserSchema } from "@/types/auth"
+export type { AuthResponse } from "./types"
+export { AuthResponseSchema } from "./types"
 
 // ============================================
 // Utils (Public API)
 // ============================================
 export { getCertificate } from "./utils/certificate"
-export { getTenantId } from "./utils/tenant"

@@ -42,8 +42,9 @@ export interface DataTableToolbarProps {
 }
 
 /**
- * Toolbar component for table with search and column visibility toggle
- * Uses TableContext to access table state, reducing prop drilling
+ * 带有搜索和列可视化开关的表格工具栏组件 使用 TableContext 访问表状态，减少了 prop 钻孔
+ *
+ * 注意：对于支持扩展/折叠的复杂多字段过滤，请改用 `DataTableFilterBar`
  */
 export function DataTableToolbar({
 	filterPlaceholder = "Search...",
@@ -70,7 +71,7 @@ export function DataTableToolbar({
 	}
 
 	return (
-		<div className={`flex items-center justify-between gap-4 ${className || ""}`}>
+		<div className={`flex items-center justify-between gap-2 ${className || ""}`}>
 			<div className="flex flex-1 items-center gap-2">
 				{onFilterChange && (
 					<Input

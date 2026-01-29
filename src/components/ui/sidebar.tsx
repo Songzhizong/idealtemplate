@@ -148,7 +148,7 @@ export const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderP
 			<SidebarContext.Provider value={value}>
 				<div
 					ref={ref}
-					className={cn("flex min-h-screen w-full", className)}
+					className={cn("flex h-screen w-full", className)}
 					style={
 						{
 							"--sidebar-width": `${sidebarWidth}px`,

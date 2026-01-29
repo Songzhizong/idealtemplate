@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus } from "lucide-react"
-import { useMemo, useState } from "react"
-import { DataTableToolbar, PaginatedTable } from "@/components/common"
+import { useMemo, useRef, useState } from "react"
+import { DataTableFilterBar, PaginatedTable, useTablePagination } from "@/components/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,6 +10,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import {
 	Select,
 	SelectContent,
@@ -18,7 +19,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select"
 import { getUsers, type User, UserGroupEnum, UserStatusEnum } from "@/features/users"
-import { useTablePagination } from "@/hooks"
 
 const columns: ColumnDef<User>[] = [
 	{
@@ -74,9 +74,11 @@ const columns: ColumnDef<User>[] = [
 		cell: ({ row }) => {
 			const status = row.original.status
 			return (
-				<Badge variant={status === "active" ? "default" : "secondary"} className="font-normal">
-					{UserStatusEnum[status]}
-				</Badge>
+				<div className="flex justify-center">
+					<Badge variant={status === "active" ? "default" : "secondary"} className="font-normal">
+						{UserStatusEnum[status]}
+					</Badge>
+				</div>
 			)
 		},
 	},
@@ -90,9 +92,11 @@ const columns: ColumnDef<User>[] = [
 		cell: ({ row }) => {
 			const enabled = row.original.mfaEnabled
 			return (
-				<Badge variant={enabled ? "default" : "secondary"} className="font-normal">
-					{enabled ? "已启用" : "未启用"}
-				</Badge>
+				<div className="flex justify-center">
+					<Badge variant={enabled ? "default" : "secondary"} className="font-normal">
+						{enabled ? "已启用" : "未启用"}
+					</Badge>
+				</div>
 			)
 		},
 	},
@@ -119,7 +123,7 @@ const columns: ColumnDef<User>[] = [
 				displayText = date.toLocaleDateString("zh-CN")
 			}
 
-			return <div className="text-sm text-muted-foreground">{displayText}</div>
+			return <div className="text-center text-sm text-muted-foreground">{displayText}</div>
 		},
 	},
 	{
@@ -130,7 +134,7 @@ const columns: ColumnDef<User>[] = [
 			align: "center",
 		},
 		cell: () => (
-			<div className="flex items-center gap-2">
+			<div className="flex items-center justify-center gap-2">
 				<Button variant="ghost" size="sm" className="h-auto p-0 text-primary hover:bg-transparent">
 					编辑
 				</Button>
@@ -157,21 +161,59 @@ const columns: ColumnDef<User>[] = [
 ]
 
 export function UsersTable() {
-	const [searchValue, setSearchValue] = useState("")
 	const [statusFilter, setStatusFilter] = useState<string>("all")
 	const [mfaFilter, setMfaFilter] = useState<string>("all")
+	const [groupFilter, setGroupFilter] = useState<string>("all")
+
+	// Input refs (uncontrolled for better performance)
+	const inputRef = useRef<HTMLInputElement>(null)
+	const emailInputRef = useRef<HTMLInputElement>(null)
+	const phoneInputRef = useRef<HTMLInputElement>(null)
 
 	const memoizedColumns = useMemo(() => columns, [])
 
 	const table = useTablePagination({
-		queryKey: ["users", searchValue, statusFilter, mfaFilter],
-		queryFn: getUsers,
+		queryKey: ["users"],
+		queryFn: (params) =>
+			getUsers({
+				...params,
+				username: inputRef.current?.value || "",
+				status: statusFilter,
+				mfaEnabled: mfaFilter,
+				email: emailInputRef.current?.value || "",
+				phone: phoneInputRef.current?.value || "",
+				userGroup: groupFilter,
+			}),
 		transform: (response) => response,
 		columns: memoizedColumns,
 		initialPageSize: 10,
 		tableId: "users-table",
 		enableServerSorting: true, // 启用服务端排序
 	})
+
+	const handleSearch = () => {
+		// Just trigger a refetch, the queryFn will use the latest input states
+		void table.refetch()
+	}
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter") {
+			handleSearch()
+		}
+	}
+
+	const handleReset = () => {
+		if (inputRef.current) inputRef.current.value = ""
+		if (emailInputRef.current) emailInputRef.current.value = ""
+		if (phoneInputRef.current) phoneInputRef.current.value = ""
+		setStatusFilter("all")
+		setMfaFilter("all")
+		setGroupFilter("all")
+		// After resetting state, we need to refetch
+		// Since setState is async, we might need a way to ensure refetch uses new values.
+		// Actually, useTablePagination's refetch will use whatever is in queryFn at that moment.
+		setTimeout(() => void table.refetch(), 0)
+	}
 
 	return (
 		<div className="flex h-full flex-col gap-4 p-6">
@@ -196,49 +238,102 @@ export function UsersTable() {
 				columnOrder={table.columnOrder}
 				sorting={table.sorting}
 				onSortingChange={table.setSorting}
-				height="calc(100vh - 240px)"
 				toolbar={
-					<DataTableToolbar
-						filterPlaceholder="ID / 名称 / 账号 / 手机 / 邮箱"
-						filterValue={searchValue}
-						onFilterChange={setSearchValue}
-						onRefresh={async () => {
-							await table.refetch()
-						}}
-						filters={
-							<>
-								<Select value={statusFilter} onValueChange={setStatusFilter}>
-									<SelectTrigger className="h-9 w-30">
-										<SelectValue placeholder="状态" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">状态</SelectItem>
-										<SelectItem value="active">正常</SelectItem>
-										<SelectItem value="inactive">未启用</SelectItem>
-									</SelectContent>
-								</Select>
-								<Select value={mfaFilter} onValueChange={setMfaFilter}>
-									<SelectTrigger className="h-9 w-30">
-										<SelectValue placeholder="MFA" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">MFA</SelectItem>
-										<SelectItem value="enabled">已启用</SelectItem>
-										<SelectItem value="disabled">未启用</SelectItem>
-									</SelectContent>
-								</Select>
-								<Button variant="outline" size="sm" className="h-9">
-									更多筛选
-								</Button>
-							</>
-						}
+					<DataTableFilterBar
+						onSearch={handleSearch}
+						onReset={handleReset}
+						onRefresh={() => void table.refetch()}
 						actions={
 							<Button variant="default" size="sm" className="h-9">
 								<Plus className="mr-1 h-4 w-4" />
 								新增
 							</Button>
 						}
-					/>
+						extraFilters={
+							<>
+								<div className="flex flex-col gap-2">
+									<Input
+										placeholder="搜索手机号..."
+										ref={phoneInputRef}
+										className="h-9"
+										onKeyDown={handleKeyDown}
+									/>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Input
+										placeholder="搜索邮箱..."
+										ref={emailInputRef}
+										className="h-9"
+										onKeyDown={handleKeyDown}
+									/>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Select
+										value={groupFilter}
+										onValueChange={(v) => {
+											setGroupFilter(v)
+											setTimeout(() => void table.refetch(), 0)
+										}}
+									>
+										<SelectTrigger className="h-9">
+											<SelectValue placeholder="全部用户组" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">全部用户组</SelectItem>
+											{Object.entries(UserGroupEnum).map(([key, value]) => (
+												<SelectItem key={key} value={key}>
+													{value}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Select
+										value={mfaFilter}
+										onValueChange={(v) => {
+											setMfaFilter(v)
+											setTimeout(() => void table.refetch(), 0)
+										}}
+									>
+										<SelectTrigger className="h-9">
+											<SelectValue placeholder="MFA 状态" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">全部</SelectItem>
+											<SelectItem value="enabled">已启用</SelectItem>
+											<SelectItem value="disabled">未启用</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</>
+						}
+					>
+						<div className="flex items-center gap-3">
+							<Input
+								placeholder="搜索 ID / 名称 / 账号..."
+								ref={inputRef}
+								className="h-9 w-64 lg:w-80"
+								onKeyDown={handleKeyDown}
+							/>
+							<Select
+								value={statusFilter}
+								onValueChange={(v) => {
+									setStatusFilter(v)
+									setTimeout(() => void table.refetch(), 0)
+								}}
+							>
+								<SelectTrigger className="h-9 w-32">
+									<SelectValue placeholder="状态" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">全部状态</SelectItem>
+									<SelectItem value="active">正常</SelectItem>
+									<SelectItem value="inactive">未启用</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</DataTableFilterBar>
 				}
 			/>
 		</div>

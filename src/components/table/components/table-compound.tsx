@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import type { PaginationState } from "@/components/table"
 import {
 	DataTableContainer,
+	DataTableFilterBar,
 	DataTablePagination,
 	DataTableToolbar,
 	TableProvider,
@@ -75,7 +76,7 @@ interface TableContainerProps {
 
 function TableContainer({
 	children,
-	height = "calc(100vh - 300px)",
+	height,
 	className,
 	toolbar,
 	pagination,
@@ -94,7 +95,10 @@ function TableContainer({
 
 	// Otherwise, render children directly (for manual composition)
 	return (
-		<div className={className} style={{ height }}>
+		<div
+			className={cn(className, !height && "min-h-0 flex-1 flex flex-col")}
+			style={height ? { height } : undefined}
+		>
 			{children}
 		</div>
 	)
@@ -183,6 +187,12 @@ function TablePagination(props: TablePaginationProps) {
 	return <DataTablePagination {...props} />
 }
 
+import type { DataTableFilterBarProps } from "./data-table-filter-bar"
+
+function TableFilterBar(props: DataTableFilterBarProps) {
+	return <DataTableFilterBar {...props} />
+}
+
 /**
  * Compound component exports
  */
@@ -192,4 +202,5 @@ export const TableCompound = {
 	Table: TableContent,
 	Toolbar: TableToolbar,
 	Pagination: TablePagination,
+	FilterBar: TableFilterBar,
 }

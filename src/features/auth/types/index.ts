@@ -1,19 +1,14 @@
 import { z } from "zod"
-
-/**
- * Permission Schema - 权限定义
- * 可以是字符串（如 "user:read"）或对象（包含资源和操作）
- */
-export const PermissionSchema = z.string()
+import { PermissionSchema, type UserProfile } from "@/types/auth"
 
 /**
  * User Schema - 当前登录用户信息
  */
 export const UserSchema = z.object({
 	id: z.string(),
-	email: z.email(),
+	email: z.string().email(),
 	name: z.string(),
-	avatar: z.url().optional(),
+	avatar: z.string().url().optional(),
 	role: z.string(), // 如 "admin", "user", "guest"
 })
 

@@ -1,24 +1,3 @@
-// Table hooks - re-export from @/components/table
-export type {
-	FilterParams,
-	PaginationState,
-	SortingParams,
-	TableColumnCheck,
-	TableColumnMeta,
-	TableOperateType,
-	UseBaseTableOptions,
-	UseTableOperateOptions,
-	UseTableOptions,
-	UseTablePaginationOptions,
-	UseTableQueryOptions,
-} from "@/components/table"
-export {
-	useBaseTable,
-	useTable,
-	useTableOperate,
-	useTablePagination,
-	useTableQuery,
-} from "@/components/table"
 export { useBoolean } from "./use-boolean"
 export { useLoading } from "./use-loading"
 export { useIsMobile } from "./use-mobile"

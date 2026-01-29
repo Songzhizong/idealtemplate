@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
+import type React from "react"
 import { Button } from "@/components/ui/button"
 
 interface ErrorLayoutProps {

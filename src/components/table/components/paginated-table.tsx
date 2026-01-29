@@ -116,7 +116,7 @@ export interface PaginatedTableProps<TData> {
 	 */
 	loadingState?: ReactNode
 	/**
-	 * Container height
+	 * Container height. If not provided, it will try to fill the available space (flex-1)
 	 */
 	height?: string
 	/**
@@ -157,7 +157,7 @@ export function PaginatedTable<TData>({
 	toolbar,
 	emptyState,
 	loadingState,
-	height = "calc(100vh - 300px)",
+	height,
 	className,
 }: PaginatedTableProps<TData>) {
 	return (

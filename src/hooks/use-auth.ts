@@ -1,6 +1,7 @@
 import { useEffect } from "react"
-import { useAuthStore, useLogoutHandler } from "@/features/auth"
-import { useUserProfile } from "@/features/auth/api/get-current-user"
+import { useLogoutHandler } from "@/hooks/use-logout-handler"
+import { useUserProfile } from "@/lib/auth-api/get-current-user"
+import { useAuthStore } from "@/lib/auth-store"
 
 /**
  * Unified Auth Hook

@@ -233,7 +233,7 @@ export function DataTable<TData>({
 	)
 
 	return (
-		<div className={cn("relative flex flex-col flex-1 min-h-0", className)}>
+		<div className={cn("relative flex flex-col flex-1 min-h-0 bg-card", className)}>
 			{fetching && !loading && (
 				<div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
 					<div className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 shadow-lg border border-border">
@@ -243,11 +243,11 @@ export function DataTable<TData>({
 				</div>
 			)}
 			{/* Fixed Header */}
-			<div className="shrink-0 overflow-hidden rounded-t-lg">
+			<div className="shrink-0 overflow-hidden rounded-t-lg bg-card border-b border-[hsl(var(--table-border))] overflow-y-hidden">
 				<Table className="table-fixed">
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
+							<TableRow key={headerGroup.id} className="hover:bg-transparent border-b-0">
 								{headerGroup.headers.map((header) => {
 									const canSort = header.column.getCanSort()
 									const isSorted = header.column.getIsSorted()
@@ -293,7 +293,7 @@ export function DataTable<TData>({
 				</Table>
 			</div>
 			{/* Scrollable Body */}
-			<div className="flex-1 overflow-auto min-h-0">
+			<div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-b-lg [overflow:overlay]" style={{ overflowY: "overlay" } as any}>
 				<Table className="table-fixed">
 					<TableBody>
 						{loading
