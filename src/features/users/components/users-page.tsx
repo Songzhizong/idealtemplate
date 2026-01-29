@@ -72,8 +72,8 @@ export function UsersPage() {
 	}, [refetch])
 
 	return (
-		<PageContainer>
-			<div className="space-y-6">
+		<PageContainer className="flex flex-col h-full">
+			<div className="flex flex-col gap-6 flex-1 min-h-0">
 				<TableProvider
 					table={table}
 					loading={loading}
