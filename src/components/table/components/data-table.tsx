@@ -162,7 +162,7 @@ export function DataTableContent<TData>({
 	)
 
 	return (
-		<div className={cn("relative flex flex-col flex-1 min-h-0 bg-card", className)}>
+		<div className={cn("relative flex flex-col flex-1 min-h-0", className)}>
 			{fetching && !loading && (
 				<div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
 					<div className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 shadow-lg border border-border">
@@ -173,11 +173,11 @@ export function DataTableContent<TData>({
 			)}
 			{/* Scrollable Area */}
 			<div
-				className="flex-1 overflow-auto min-h-0 bg-card rounded-lg [scrollbar-gutter:stable]"
+				className="flex-1 overflow-auto min-h-0 [scrollbar-gutter:stable]"
 				style={maxHeight ? { maxHeight } : undefined}
 			>
 				<Table>
-					<TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--table-border))]">
+					<TableHeader className="sticky top-0 z-10 shadow-[0_1px_0_0_var(--color-table-border)]">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id} className="hover:bg-transparent border-b-0">
 								{headerGroup.headers.map((header) => {

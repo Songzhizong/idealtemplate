@@ -6,7 +6,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
 	({ className, ...props }, ref) => (
 		<table
 			ref={ref}
-			className={cn("w-full caption-bottom text-sm text-foreground bg-card", className)}
+			className={cn("w-full caption-bottom text-sm text-foreground", className)}
 			{...props}
 		/>
 	),
@@ -19,10 +19,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<thead
 		ref={ref}
-		className={cn(
-			"bg-[hsl(var(--table-header-bg))] [&_tr]:border-b [&_tr]:border-[hsl(var(--table-border))]",
-			className,
-		)}
+		className={cn("bg-table-header [&_tr]:border-b [&_tr]:border-table-border", className)}
 		{...props}
 	/>
 ))
@@ -34,7 +31,7 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<tbody
 		ref={ref}
-		className={cn("[&_tr:last-child]:border-0 [&_tr]:border-[hsl(var(--table-border))]", className)}
+		className={cn("[&_tr:last-child]:border-0 [&_tr]:border-table-border", className)}
 		{...props}
 	/>
 ))
@@ -60,7 +57,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
 		<tr
 			ref={ref}
 			className={cn(
-				"border-b border-[hsl(var(--table-border))] transition-colors hover:bg-[hsl(var(--table-row-hover))] data-[state=selected]:bg-muted",
+				"border-b border-table-border transition-colors hover:bg-table-row-hover data-[state=selected]:bg-muted",
 				className,
 			)}
 			{...props}

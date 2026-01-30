@@ -76,7 +76,7 @@ export function useTableQuery<TData, TResponse = TData[]>(
 	// Fetch data without pagination params
 	const query = useQuery({
 		queryKey,
-		queryFn: () => queryFn({ pageNumber: 1, pageSize: 999999 }),
+		queryFn: () => queryFn({ pageNumber: 1, pageSize: 1000 }),
 	})
 
 	const data = useMemo(() => {

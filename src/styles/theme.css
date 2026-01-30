@@ -55,6 +55,12 @@
 	--color-text-primary: hsl(var(--foreground));
 	--color-text-secondary: hsl(var(--muted-foreground));
 
+	/* Table component colors */
+	--color-table-header: hsl(var(--table-header-bg));
+	--color-table-row-hover: hsl(var(--table-row-hover));
+	--color-table-row-striped: hsl(var(--table-row-striped));
+	--color-table-border: hsl(var(--table-border));
+
 	/* Utility colors */
 	--color-ink-900: hsl(var(--ink-900));
 	--color-ink-700: hsl(var(--ink-700));
