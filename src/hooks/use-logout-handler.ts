@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 import { queryClient } from "@/app/query-client"
-import { useLogout } from "@/lib/auth-api/logout"
+import { useAuthContext } from "@/context/auth-context"
 import { useAuthStore } from "@/lib/auth-store"
 
 /**
@@ -10,12 +10,12 @@ import { useAuthStore } from "@/lib/auth-store"
 export function useLogoutHandler() {
 	const navigate = useNavigate()
 	const authStore = useAuthStore()
-	const logoutMutation = useLogout()
+	const { logout: logoutApi, isLoggingOut } = useAuthContext()
 
 	const handleLogout = async () => {
 		try {
-			// 1. 调用退出登录接口
-			const data = await logoutMutation.mutateAsync()
+			// 1. 调用退出登录接口 (via Context)
+			const data = await logoutApi()
 
 			// 2. 立即清除查询缓存并停止所有请求
 			// 这一步非常重要，可以防止页面在跳转过程中继续发起已认证的请求
@@ -57,6 +57,6 @@ export function useLogoutHandler() {
 
 	return {
 		handleLogout,
-		isLoggingOut: logoutMutation.isPending,
+		isLoggingOut,
 	}
 }

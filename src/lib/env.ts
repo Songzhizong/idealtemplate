@@ -10,6 +10,7 @@ export const env = createEnv({
 		VITE_APP_ID: z.string(),
 		VITE_DEFAULT_USERNAME: z.string().optional(),
 		VITE_DEFAULT_PASSWORD: z.string().optional(),
+		VITE_IS_STATIC_ADMIN: z.string().optional(),
 	},
 	runtimeEnv: {
 		VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
@@ -18,5 +19,6 @@ export const env = createEnv({
 		VITE_APP_ID: import.meta.env.VITE_APP_ID,
 		VITE_DEFAULT_USERNAME: import.meta.env.VITE_DEFAULT_USERNAME,
 		VITE_DEFAULT_PASSWORD: import.meta.env.VITE_DEFAULT_PASSWORD,
+		VITE_IS_STATIC_ADMIN: import.meta.env.VITE_IS_STATIC_ADMIN,
 	},
 })

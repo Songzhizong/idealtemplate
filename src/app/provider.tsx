@@ -7,16 +7,20 @@ import { queryClient } from "@/app/query-client"
 import { router } from "@/app/router"
 import { ThemeProvider } from "@/components/theme-provider"
 
+import { AuthProvider } from "@/features/auth/components/auth-provider"
+
 export function AppProvider() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-				<NuqsAdapter>
-					<RouterProvider router={router} />
-				</NuqsAdapter>
-				<Toaster position="top-center" richColors />
-				{import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
-			</ThemeProvider>
+			<AuthProvider>
+				<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+					<NuqsAdapter>
+						<RouterProvider router={router} />
+					</NuqsAdapter>
+					<Toaster position="top-center" richColors />
+					{import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+				</ThemeProvider>
+			</AuthProvider>
 		</QueryClientProvider>
 	)
 }

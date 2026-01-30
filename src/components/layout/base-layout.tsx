@@ -10,6 +10,7 @@ import {
 	SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useThemeStore } from "@/hooks/use-theme-store"
+import { useAuthStore } from "@/lib/auth-store"
 import { cn } from "@/lib/utils"
 import { ALL_NAV, PRIMARY_NAV } from "./nav-config"
 import { Header } from "./parts/header"
@@ -28,6 +29,22 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 		select: (state) => state.location.pathname,
 	})
 	const [searchOpen, setSearchOpen] = React.useState(false)
+
+	const { hasPermission } = useAuthStore()
+
+	const filteredPrimaryNav = React.useMemo(() => {
+		return PRIMARY_NAV.filter((item) => {
+			// @ts-expect-error - permission is optional
+			return !item.permission || hasPermission(item.permission)
+		})
+	}, [hasPermission])
+
+	const filteredAllNav = React.useMemo(() => {
+		return ALL_NAV.filter((item) => {
+			// @ts-expect-error - permission is optional
+			return !item.permission || hasPermission(item.permission)
+		})
+	}, [hasPermission])
 
 	return (
 		<SidebarProvider
@@ -49,7 +66,7 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 					<SidebarGroup>
 						<SidebarGroupContent>
 							<SidebarMenu>
-								{PRIMARY_NAV.map((item) => (
+								{filteredPrimaryNav.map((item) => (
 									<SidebarNavItem
 										key={item.title}
 										item={item}
@@ -64,7 +81,7 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 			</Sidebar>
 
 			<div className="flex h-screen flex-1 flex-col overflow-hidden">
-				<Header navItems={ALL_NAV} onSearchOpen={() => setSearchOpen(true)} />
+				<Header navItems={filteredAllNav} onSearchOpen={() => setSearchOpen(true)} />
 
 				<main className="flex-1 overflow-y-auto relative">
 					<div

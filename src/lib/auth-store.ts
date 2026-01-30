@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { env } from "@/lib/env"
 import type { Permission, UserProfile } from "@/types/auth"
 
 type AuthState = {
@@ -19,7 +20,7 @@ type AuthState = {
 	setTenantId: (tenantId: string | null) => void
 
 	// Actions - Permission Management
-	hasPermission: (permission: Permission) => boolean
+	hasPermission: (permission: Permission | Permission[], mode?: "AND" | "OR") => boolean
 	hasAnyPermission: (permissions: Permission[]) => boolean
 	hasAllPermissions: (permissions: Permission[]) => boolean
 }
@@ -107,29 +108,43 @@ export const useAuthStore = create<AuthState>()(
 
 			/**
 			 * 检查用户是否拥有指定权限
-			 * @param permission - 权限标识符（如 "user:read"）
+			 * @param permission - 权限标识符或列表
+			 * @param mode - 检查模式：'AND' (所有均需满足) 或 'OR' (满足其一即可)，默认为 'OR' (针对数组)
 			 */
-			hasPermission: (permission) => {
+			hasPermission: (permission, mode = "OR") => {
+				// Static Admin Override - 用于开发环境或静态部署
+				if (env.VITE_IS_STATIC_ADMIN === "true") {
+					return true
+				}
+
 				const { permissions } = get()
-				return permissions.includes(permission)
+
+				const userPermissions = permissions as string[]
+				const required = Array.isArray(permission) ? permission : [permission]
+
+				if (mode === "AND") {
+					return required.every((p) => userPermissions.includes(p))
+				}
+
+				return required.some((p) => userPermissions.includes(p))
 			},
 
 			/**
 			 * 检查用户是否拥有任意一个权限（OR 逻辑）
+			 * @deprecated 建议优先使用 hasPermission(list, 'OR')
 			 * @param permissions - 权限列表
 			 */
 			hasAnyPermission: (permissions) => {
-				const userPermissions = get().permissions
-				return permissions.some((p) => userPermissions.includes(p))
+				return get().hasPermission(permissions, "OR")
 			},
 
 			/**
 			 * 检查用户是否拥有所有权限（AND 逻辑）
+			 * @deprecated 建议优先使用 hasPermission(list, 'AND')
 			 * @param permissions - 权限列表
 			 */
 			hasAllPermissions: (permissions) => {
-				const userPermissions = get().permissions
-				return permissions.every((p) => userPermissions.includes(p))
+				return get().hasPermission(permissions, "AND")
 			},
 		}),
 		{

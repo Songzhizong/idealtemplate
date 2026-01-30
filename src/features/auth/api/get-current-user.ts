@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { api } from "@/lib/api-client"
-import { type UserProfile, UserProfileSchema } from "@/types/auth"
+import { api } from "@/lib/api-client.ts"
+import { type UserProfile, UserProfileSchema } from "@/types/auth.ts"
 
 /**
  * Fetcher - 获取当前登录用户个人信息

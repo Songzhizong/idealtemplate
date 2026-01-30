@@ -6,15 +6,15 @@
  */
 
 // ============================================
+// API Hooks (Public API)
+// ============================================
+export { useUserProfile } from "@/features/auth/api/get-current-user.ts"
+export { useLogout } from "@/features/auth/api/logout.ts"
+// ============================================
 // Hooks (Public API)
 // ============================================
 export { useAuth } from "@/hooks/use-auth"
 export { useLogoutHandler } from "@/hooks/use-logout-handler"
-// ============================================
-// API Hooks (Public API)
-// ============================================
-export { useUserProfile } from "@/lib/auth-api/get-current-user"
-export { useLogout } from "@/lib/auth-api/logout"
 // ============================================
 // Stores (Public API)
 // ============================================

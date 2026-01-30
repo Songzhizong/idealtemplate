@@ -1,6 +1,5 @@
-import { useEffect } from "react"
+import { useAuthContext } from "@/context/auth-context"
 import { useLogoutHandler } from "@/hooks/use-logout-handler"
-import { useUserProfile } from "@/lib/auth-api/get-current-user"
 import { useAuthStore } from "@/lib/auth-store"
 
 /**
@@ -12,25 +11,22 @@ import { useAuthStore } from "@/lib/auth-store"
  */
 export function useAuth() {
 	const authStore = useAuthStore()
-	const currentUserQuery = useUserProfile()
+	const { isLoadingUser, refetchUser } = useAuthContext()
+
+	// Use custom handler for orchestration
 	const { handleLogout, isLoggingOut } = useLogoutHandler()
 
-	// 自动同步后端用户信息到 Store（仅在已登录时）
-	useEffect(() => {
-		if (authStore.isAuthenticated && currentUserQuery.data) {
-			authStore.setUser(currentUserQuery.data)
-		}
-	}, [currentUserQuery.data, authStore.isAuthenticated, authStore])
-
 	return {
-		// State
+		// State (Read from Store usually, but Context has synced user)
+		// We can return store versions to be consistent with original behavior or context versions.
+		// Original returned store versions. Context and Store are synced in AuthProvider.
 		user: authStore.user,
 		token: authStore.token,
 		permissions: authStore.permissions,
 		isAuthenticated: authStore.isAuthenticated,
 
 		// Loading States
-		isLoadingUser: currentUserQuery.isLoading,
+		isLoadingUser,
 		isLoggingOut,
 
 		// Permission Checks
@@ -47,6 +43,6 @@ export function useAuth() {
 		setPermissions: authStore.setPermissions,
 
 		// Query Utilities
-		refetchUser: currentUserQuery.refetch,
+		refetchUser,
 	}
 }

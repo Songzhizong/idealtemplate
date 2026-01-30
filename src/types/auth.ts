@@ -1,10 +1,14 @@
 import { z } from "zod"
 
+import { PERMISSIONS } from "@/config/permissions"
+
 /**
  * Permission Schema - 权限定义
  */
+export { PERMISSIONS }
+
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS] | (string & {})
 export const PermissionSchema = z.string()
-export type Permission = z.infer<typeof PermissionSchema>
 
 /**
  * Tenant Info Schema

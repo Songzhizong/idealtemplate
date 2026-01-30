@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { z } from "zod"
-import { api } from "@/lib/api-client"
+import { api } from "@/lib/api-client.ts"
 
 /**
  * Logout Response Schema

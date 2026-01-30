@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react"
 import { parseAsString } from "nuqs"
 import { useCallback } from "react"
+import { AuthButton } from "@/components/auth/auth-button"
 import { PageContainer } from "@/components/common"
 import {
 	DataTable,
@@ -9,7 +10,6 @@ import {
 	DataTablePagination,
 	TableProvider,
 } from "@/components/table"
-import { Button } from "@/components/ui/button"
 import { useDataTable } from "@/hooks"
 import { type GetUsersParams, getUsers } from "../api/get-users"
 import type { User } from "../types"
@@ -90,10 +90,10 @@ export function UsersPage() {
 								onReset={handleReset}
 								onRefresh={handleRefresh}
 								actions={
-									<Button size="sm" className="h-9">
+									<AuthButton permission="users:add" size="sm" className="h-9">
 										<Plus className="mr-2 h-4 w-4" />
 										新增
-									</Button>
+									</AuthButton>
 								}
 								extraFilters={
 									<UsersExtraFilters
