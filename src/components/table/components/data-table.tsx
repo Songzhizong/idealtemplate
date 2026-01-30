@@ -14,7 +14,7 @@ import {
 } from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import type { PaginationState } from "@/components/table"
 import { Button } from "@/components/ui/button"
 import {
@@ -139,6 +139,15 @@ export function DataTableContent<TData>({
 	loadingState,
 }: DataTableContentProps<TData>) {
 	const totalColumns = table.getAllColumns().length
+	const headerRef = useRef<HTMLDivElement>(null)
+	const bodyRef = useRef<HTMLDivElement>(null)
+
+	// Sync header scroll with body scroll
+	const handleBodyScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		if (headerRef.current) {
+			headerRef.current.scrollLeft = e.currentTarget.scrollLeft
+		}
+	}
 
 	// Default loading state
 	const defaultLoadingState = (
@@ -162,7 +171,7 @@ export function DataTableContent<TData>({
 	)
 
 	return (
-		<div className={cn("relative flex flex-col flex-1 min-h-0", className)}>
+		<div className={cn("relative flex flex-col flex-1 min-h-0 w-full", className)}>
 			{fetching && !loading && (
 				<div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
 					<div className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 shadow-lg border border-border">
@@ -171,15 +180,13 @@ export function DataTableContent<TData>({
 					</div>
 				</div>
 			)}
-			{/* Scrollable Area */}
-			<div
-				className="flex-1 overflow-auto min-h-0 [scrollbar-gutter:stable]"
-				style={maxHeight ? { maxHeight } : undefined}
-			>
-				<Table>
-					<TableHeader className="sticky top-0 z-10 shadow-[0_1px_0_0_var(--color-table-border)]">
+
+			{/* Header Table */}
+			<div ref={headerRef} className="overflow-hidden border-b border-table-border bg-table-header">
+				<Table className="table-fixed">
+					<TableHeader className="bg-transparent border-none shadow-none [&_tr]:border-b-0">
 						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id} className="hover:bg-transparent border-b-0">
+							<TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
 								{headerGroup.headers.map((header) => {
 									const canSort = header.column.getCanSort()
 									const isSorted = header.column.getIsSorted()
@@ -192,8 +199,8 @@ export function DataTableContent<TData>({
 										<TableHead
 											key={header.id}
 											style={{
-												width: size !== 150 ? `${size}px` : undefined,
-												minWidth: size !== 150 ? `${size}px` : undefined,
+												width: `${size}px`,
+												minWidth: `${size}px`,
 											}}
 											className={cn(
 												align === "center" && "text-center",
@@ -225,6 +232,17 @@ export function DataTableContent<TData>({
 							</TableRow>
 						))}
 					</TableHeader>
+				</Table>
+			</div>
+
+			{/* Body Table */}
+			<div
+				ref={bodyRef}
+				onScroll={handleBodyScroll}
+				className="flex-1 overflow-auto min-h-0 [overflow-y:overlay]"
+				style={maxHeight ? { maxHeight } : undefined}
+			>
+				<Table className="table-fixed">
 					<TableBody>
 						{loading
 							? loadingState || defaultLoadingState
@@ -243,8 +261,8 @@ export function DataTableContent<TData>({
 													<TableCell
 														key={cell.id}
 														style={{
-															width: size !== 150 ? `${size}px` : undefined,
-															minWidth: size !== 150 ? `${size}px` : undefined,
+															width: `${size}px`,
+															minWidth: `${size}px`,
 														}}
 														className={cn(
 															align === "center" && "text-center",
