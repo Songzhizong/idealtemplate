@@ -80,3 +80,5 @@ export { AuthResponseSchema } from "./types"
 // Utils (Public API)
 // ============================================
 export { getCertificate } from "./utils/certificate"
+export { showUnauthorizedDialog } from "./utils/show-unauthorized-dialog"
+export { createDebouncedUnauthorizedHandler } from "./utils/unauthorized-handler"

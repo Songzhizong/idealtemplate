@@ -4,17 +4,32 @@ import { env } from "@/lib/env"
 import { ProblemDetailSchema } from "@/types/problem-detail"
 
 /**
- * 扩展 Ky 请求配置，支持自定义业务标记
+ * 扩展 Ky 的 Options 类型，添加自定义业务标记
+ */
+declare module "ky" {
+	interface Options {
+		useTenantId?: boolean
+		useAuthClientId?: boolean
+		disableCache?: boolean
+	}
+}
+
+/**
+ * 扩展后的选项类型（用于内部类型断言）
  */
 interface ExtendedOptions extends Options {
 	useTenantId?: boolean
 	useAuthClientId?: boolean
+	disableCache?: boolean
 }
 
-// 扩展 KyInstance 类型，添加 withTenantId 和 withAuthClientId 方法
+/**
+ * 扩展 KyInstance，添加自定义链式调用方法
+ */
 interface ExtendedKyInstance extends KyInstance {
-	withTenantId: () => KyInstance
-	withAuthClientId: () => KyInstance
+	withTenantId(): ExtendedKyInstance
+	withAuthClientId(): ExtendedKyInstance
+	disableCache(): ExtendedKyInstance
 }
 
 // Dependency Injection: 定义回调函数类型
@@ -64,10 +79,12 @@ const apiInstance = ky.create({
 				if ((options as ExtendedOptions).useTenantId) {
 					const tenantId = getTenantId()
 					if (tenantId) {
-						console.debug("[API] Setting x-tenant-id:", tenantId)
+						if (import.meta.env.DEV) {
+							console.debug("[API] Setting x-tenant-id:", tenantId)
+						}
 						request.headers.set("x-tenant-id", tenantId)
 					} else {
-						console.error("[API] Tenant ID is required but not available.")
+						throw new Error("Tenant ID is required but not available")
 					}
 				}
 
@@ -79,10 +96,12 @@ const apiInstance = ky.create({
 					}
 				}
 
-				console.info("Request URL:", request.url)
+				if (import.meta.env.DEV) {
+					console.info("Request URL:", request.url)
+				}
 
-				// 为 GET 请求添加缓存破坏参数
-				if (request.method === "GET") {
+				// 仅在明确指定 disableCache 时添加缓存破坏参数
+				if (request.method === "GET" && (options as ExtendedOptions).disableCache) {
 					const url = new URL(request.url)
 					url.searchParams.set("_t", Date.now().toString())
 					return new Request(url.toString(), request)
@@ -116,25 +135,35 @@ const apiInstance = ky.create({
 			},
 		],
 	},
-})
+}) as ExtendedKyInstance
 
 /**
- * 扩展 API 实例，添加携带租户ID和认证客户端ID的方法
+ * 扩展 API 实例，添加链式调用方法
  * 使用方式:
  * - api.withTenantId().get("users")
  * - api.withAuthClientId().post("auth/login")
+ * - api.disableCache().get("users")
+ * - api.withTenantId().disableCache().get("users")
+ *
+ * 注意：每次调用都会创建新实例，但 ky.extend() 是轻量级操作
  */
-;(apiInstance as ExtendedKyInstance).withTenantId = function () {
+apiInstance.withTenantId = function (this: ExtendedKyInstance): ExtendedKyInstance {
 	return this.extend({
 		useTenantId: true,
-	} as ExtendedOptions)
+	}) as ExtendedKyInstance
 }
 
-;(apiInstance as ExtendedKyInstance).withAuthClientId = function () {
+apiInstance.withAuthClientId = function (this: ExtendedKyInstance): ExtendedKyInstance {
 	return this.extend({
 		useAuthClientId: true,
-	} as ExtendedOptions)
+	}) as ExtendedKyInstance
+}
+
+apiInstance.disableCache = function (this: ExtendedKyInstance): ExtendedKyInstance {
+	return this.extend({
+		disableCache: true,
+	}) as ExtendedKyInstance
 }
 
 // 导出带类型的 api 实例
-export const api = apiInstance as ExtendedKyInstance
+export const api = apiInstance

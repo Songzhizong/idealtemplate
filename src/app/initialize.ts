@@ -5,6 +5,7 @@
  * 这里是配置跨层依赖的正确位置
  */
 
+import { createDebouncedUnauthorizedHandler } from "@/features/auth"
 import { configureApiClient } from "@/lib/api-client"
 import { authStore } from "@/lib/auth-store"
 
@@ -19,13 +20,7 @@ export function initializeApiClient() {
 			const state = authStore.getState()
 			return state.tenantId ?? state.user?.tenantId ?? null
 		},
-		onUnauthorized: () => {
-			authStore.getState().logout()
-			const currentPath = window.location.pathname
-			if (!currentPath.includes("/login")) {
-				window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
-			}
-		},
+		onUnauthorized: createDebouncedUnauthorizedHandler(),
 	})
 }
 

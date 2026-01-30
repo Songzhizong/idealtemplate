@@ -71,7 +71,12 @@ export function UserMenu() {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>取消</AlertDialogCancel>
-						<AlertDialogAction onClick={handleLogout}>确认退出</AlertDialogAction>
+						<AlertDialogAction
+							onClick={handleLogout}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							确认退出
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
