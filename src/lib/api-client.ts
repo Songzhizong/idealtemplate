@@ -1,5 +1,6 @@
 import ky, { type KyInstance, type Options } from "ky"
 import { toast } from "sonner"
+
 import { env } from "@/lib/env"
 import { ProblemDetailSchema } from "@/types/problem-detail"
 
@@ -112,6 +113,11 @@ const apiInstance = ky.create({
 			async (_request, _options, response) => {
 				if (!response.ok) {
 					if (response.status === 401) {
+						const url = _request.url
+						if (url.endsWith("/nexus-api/iam/logout")) {
+							// 避免在 logout 请求上触发重复的 401 处理, 返回一个成功响应
+							return new Response("{}", { status: 200 })
+						}
 						// 调用外部注入的 401 处理逻辑
 						onUnauthorized()
 					} else {

@@ -6,7 +6,7 @@ import { api } from "@/lib/api-client.ts"
  * Logout Response Schema
  */
 export const LogoutResponseSchema = z.object({
-	logoutIframeUris: z.array(z.string()),
+	logoutIframeUris: z.array(z.string()).optional(),
 })
 
 export type LogoutResponse = z.infer<typeof LogoutResponseSchema>

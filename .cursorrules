@@ -15,6 +15,9 @@ Your mindset maps Backend concepts (DTO, Controller, Service) to Frontend patter
   - **Consistent UI**: Prioritize existing patterns from `@/components/ui`. Do not invent new UI styles unless absolutely necessary.
 - **HTTP Client**: Use `ky` exclusively. Do not use `axios` or native `fetch`.
 - **Lint/Format**: Use Biome for linting and formatting. Indentation: Tabs. Quotes: Double quotes.
+- **Visual Hierarchy & Borders**:
+  - **Subtle Borders**: For internal borders (tables, lists, secondary dividers), ALWAYS use `border-border/50` or `divide-border/50` to reduce visual noise. Reserve full opacity borders for primary containers (Cards, Modals).
+  - **Table Overflow**: Always wrap `Table` components in a `div` with `overflow-x-auto` to ensure responsiveness.
 
 ## Tooling & Package Management
 - **Package Manager**: Exclusively use **pnpm**.

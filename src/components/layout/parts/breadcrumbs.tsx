@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link, useMatches } from "@tanstack/react-router"
 import { AlertTriangle, ChevronRight, LayoutGrid, type LucideIcon, ShieldAlert } from "lucide-react"
 import * as React from "react"
 import { useThemeStore } from "@/hooks/use-theme-store"
@@ -17,42 +17,34 @@ const ERROR_PAGES = [
 export function Breadcrumbs({ navItems }: BreadcrumbsProps) {
 	const showBreadcrumb = useThemeStore((state) => state.ui.showBreadcrumb)
 	const showBreadcrumbIcon = useThemeStore((state) => state.ui.showBreadcrumbIcon)
-	const pathname = useRouterState({
-		select: (state) => state.location.pathname,
-	})
 
-	const routeLabels = React.useMemo(() => {
-		const entries: Array<[string, string]> = navItems.map((item) => [item.to, item.title])
-		// Add error page labels
-		for (const errorPage of ERROR_PAGES) {
-			entries.push([errorPage.to, errorPage.title])
-		}
-		return new Map<string, string>(entries)
-	}, [navItems])
+	const matches = useMatches()
 
 	const routeIcons = React.useMemo(() => {
 		const entries: Array<[string, LucideIcon]> = navItems.map((item) => [item.to, item.icon])
-		// Add error page icons
 		for (const errorPage of ERROR_PAGES) {
 			entries.push([errorPage.to, errorPage.icon])
 		}
 		return new Map<string, LucideIcon>(entries)
 	}, [navItems])
 
-	const breadcrumbLabel = routeLabels.get(pathname) ?? "Overview"
-
 	const breadcrumbs = React.useMemo(() => {
-		const rootLabel = routeLabels.get("/") ?? "控制台"
-		if (pathname === "/") {
-			return [{ label: rootLabel, to: "/" }]
-		}
-		return [
-			{ label: rootLabel, to: "/" },
-			{ label: breadcrumbLabel, to: pathname },
-		]
-	}, [pathname, breadcrumbLabel, routeLabels])
+		return matches
+			.filter((match) => {
+				// 过滤掉根路由和没有标题的布局路由
+				const title = (match.staticData as { title?: string })?.title
+				return !!title
+			})
+			.map((match) => {
+				const title = (match.staticData as { title?: string })?.title ?? ""
+				return {
+					label: title,
+					to: match.pathname,
+				}
+			})
+	}, [matches])
 
-	if (!showBreadcrumb) return null
+	if (!showBreadcrumb || breadcrumbs.length === 0) return null
 
 	return (
 		<nav
@@ -61,7 +53,7 @@ export function Breadcrumbs({ navItems }: BreadcrumbsProps) {
 		>
 			<ol className="flex items-center gap-2">
 				{breadcrumbs.map((crumb, index) => (
-					<li key={crumb.label} className="flex items-center gap-2">
+					<li key={`${crumb.to}-${crumb.label}`} className="flex items-center gap-2">
 						{index > 0 ? <ChevronRight className="size-3 text-muted-foreground/50" /> : null}
 						{index < breadcrumbs.length - 1 ? (
 							<Link
@@ -74,9 +66,8 @@ export function Breadcrumbs({ navItems }: BreadcrumbsProps) {
 						) : (
 							<span className="flex items-center gap-1 font-semibold text-foreground">
 								{showBreadcrumbIcon &&
-									crumb.to === pathname &&
 									(() => {
-										const icon = routeIcons.get(pathname)
+										const icon = routeIcons.get(crumb.to) || (index === 0 ? LayoutGrid : null)
 										return icon ? React.createElement(icon, { className: "size-3" }) : null
 									})()}
 								{crumb.label}

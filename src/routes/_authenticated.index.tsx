@@ -26,4 +26,7 @@ export const Route = createFileRoute("/_authenticated/")({
 		}
 	},
 	component: InfrastructureDashboard,
+	staticData: {
+		title: "控制台",
+	},
 })

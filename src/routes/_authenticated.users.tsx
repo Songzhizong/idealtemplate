@@ -13,4 +13,7 @@ export const Route = createFileRoute("/_authenticated/users")({
 		}
 	},
 	component: UsersPage,
+	staticData: {
+		title: "用户管理",
+	},
 })

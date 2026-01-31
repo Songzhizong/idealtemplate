@@ -51,7 +51,6 @@ export function useLogoutHandler() {
 			// 即使接口失败，也要确保本地状态清除
 			queryClient.clear()
 			useAuthStore.getState().logout()
-			toast.error("退出登录时发生错误，已强制退出")
 			void navigate({ to: "/login" })
 		}
 	}

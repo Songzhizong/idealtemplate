@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import { LogOut, User } from "lucide-react"
 import { useState } from "react"
 import {
@@ -21,15 +22,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLogoutHandler } from "@/hooks/use-logout-handler"
+import { useAuthStore } from "@/lib/auth-store.ts"
+import { getAvatarByHash } from "@/lib/avatar-utils.ts"
 
 export function UserMenu() {
 	const { handleLogout } = useLogoutHandler()
 	const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
-
-	const handleProfileClick = () => {
-		// TODO: 跳转到个人中心页面
-		console.log("跳转到个人中心")
-	}
+	const user = useAuthStore((state) => state.user)
 
 	return (
 		<DropdownMenu>
@@ -41,7 +40,7 @@ export function UserMenu() {
 					aria-label="User menu"
 				>
 					<Avatar className="h-9 w-9">
-						<AvatarImage src="https://github.com/shadcn.png" alt="User avatar" />
+						<AvatarImage src={getAvatarByHash(user?.userId)} alt="User avatar" />
 						<AvatarFallback>CN</AvatarFallback>
 					</Avatar>
 				</Button>
@@ -49,9 +48,11 @@ export function UserMenu() {
 			<DropdownMenuContent align="end" className="w-56">
 				<DropdownMenuLabel>我的账户</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={handleProfileClick}>
-					<User className="mr-2 h-4 w-4" />
-					<span>个人中心</span>
+				<DropdownMenuItem asChild>
+					<Link to="/profile">
+						<User className="mr-2 h-4 w-4" />
+						<span>个人中心</span>
+					</Link>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
