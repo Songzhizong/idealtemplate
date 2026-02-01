@@ -1,4 +1,4 @@
-import { Activity, Menu, MoreHorizontal, Settings, Shield, User } from "lucide-react"
+import { Activity, Menu, Shield, User } from "lucide-react"
 import { useQueryState } from "nuqs"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -19,8 +19,8 @@ const navItems = [
 	{ value: "general", label: "通用", icon: User },
 	{ value: "security", label: "安全", icon: Shield },
 	{ value: "activity", label: "活动", icon: Activity },
-	{ value: "preferences", label: "偏好", icon: Settings },
-	{ value: "advanced", label: "其他", icon: MoreHorizontal },
+	// { value: "preferences", label: "偏好", icon: Settings },
+	// { value: "advanced", label: "其他", icon: MoreHorizontal },
 ] as const
 
 export function ProfileLayout() {
