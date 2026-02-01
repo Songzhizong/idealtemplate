@@ -3,15 +3,13 @@ import { z } from "zod"
 import { api } from "@/lib/api-client"
 
 /**
- * 个人密码状态 Schema
+ * 个人密码状态
  */
-export const PasswordStatusSchema = z.object({
-	configured: z.boolean(),
-	passwordTime: z.string().nullable().optional(),
-	passwordExpireTime: z.string().nullable().optional(),
-})
-
-export type PasswordStatus = z.infer<typeof PasswordStatusSchema>
+export interface PasswordStatus {
+	configured: boolean
+	passwordTime?: string | null
+	passwordExpireTime?: string | null
+}
 
 /**
  * 修改个人密码请求 Schema
@@ -28,7 +26,7 @@ export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>
  */
 export const fetchPasswordStatus = async (): Promise<PasswordStatus> => {
 	const data = await api.get("nexus-api/iam/me/password-status").json()
-	return PasswordStatusSchema.parse(data)
+	return data as PasswordStatus
 }
 
 /**

@@ -10,15 +10,13 @@ export const ProfileSchema = z.object({
 
 export type ProfileInput = z.infer<typeof ProfileSchema>
 
-export const UpdateProfileResponseSchema = ProfileSchema.extend({
-	updatedAt: z.iso.datetime(),
-})
-
-export type UpdateProfileResponse = z.infer<typeof UpdateProfileResponseSchema>
+export interface UpdateProfileResponse extends ProfileInput {
+	updatedAt: string
+}
 
 const updateProfile = async (payload: ProfileInput) => {
 	const json = await api.post("profile", { json: payload }).json()
-	return UpdateProfileResponseSchema.parse(json)
+	return json as UpdateProfileResponse
 }
 
 export function useUpdateProfile() {

@@ -12,13 +12,11 @@ export const CheckCaptchaRequestSchema = z.object({
 export type CheckCaptchaRequest = z.infer<typeof CheckCaptchaRequestSchema>
 
 /**
- * Check Captcha Response Schema
+ * Check Captcha Response Interface
  */
-export const CheckCaptchaResponseSchema = z.object({
-	required: z.boolean(),
-})
-
-export type CheckCaptchaResponse = z.infer<typeof CheckCaptchaResponseSchema>
+export interface CheckCaptchaResponse {
+	required: boolean
+}
 
 /**
  * Fetcher - 检查是否需要验证码
@@ -30,7 +28,7 @@ const checkCaptcha = async (request: CheckCaptchaRequest): Promise<CheckCaptchaR
 			json: request,
 		})
 		.json()
-	return CheckCaptchaResponseSchema.parse(json) // Runtime Validation
+	return json as CheckCaptchaResponse
 }
 
 /**

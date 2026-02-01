@@ -22,7 +22,7 @@ export { authStore, useAuthStore } from "@/lib/auth-store"
 // Types & Schemas (Public API)
 // ============================================
 export type { Permission, UserProfile as User } from "@/types/auth"
-export { PermissionSchema, UserProfileSchema as UserSchema } from "@/types/auth"
+export { PermissionSchema } from "@/types/auth"
 export {
 	type CheckCaptchaRequest,
 	CheckCaptchaRequestSchema,
@@ -38,7 +38,6 @@ export {
 	FactorType,
 	type LoginResponse,
 	// Response Types & Schemas
-	LoginResponseSchema,
 	LoginResponseType,
 	type MfaTicket,
 	type MultifactorLoginRequest,
@@ -74,7 +73,6 @@ export { LoginPage } from "./components/login-page"
 export { PermissionGuard } from "./components/permission-guard"
 export { useLoginHandler } from "./hooks/use-login-handler"
 export type { AuthResponse } from "./types"
-export { AuthResponseSchema } from "./types"
 
 // ============================================
 // Utils (Public API)

@@ -1,17 +1,13 @@
-import { z } from "zod"
-
-export const UserSchema = z.object({
-	id: z.string(),
-	username: z.string(),
-	email: z.string().email(),
-	phone: z.string(),
-	userGroups: z.array(z.string()), // 改为数组支持多个用户组
-	status: z.enum(["active", "inactive"]),
-	mfaEnabled: z.boolean(),
-	lastVisit: z.string(),
-})
-
-export type User = z.infer<typeof UserSchema>
+export interface User {
+	id: string
+	username: string
+	email: string
+	phone: string
+	userGroups: string[] // 改为数组支持多个用户组
+	status: "active" | "inactive"
+	mfaEnabled: boolean
+	lastVisit: string
+}
 
 export const UserStatusEnum = {
 	active: "正常",

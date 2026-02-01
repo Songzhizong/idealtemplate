@@ -1,33 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { z } from "zod"
 import { api } from "@/lib/api-client"
 
 /**
- * Session Schema
+ * Session Interface
  */
-export const SessionSchema = z.object({
-	id: z.string(),
-	loginIp: z.string(),
-	location: z.string().optional().nullable(),
-	device: z.string(),
-	loginChannel: z.string(),
-	latestActivity: z.coerce.number(),
-	createdTime: z.coerce.number(),
-})
+export interface Session {
+	id: string
+	loginIp: string
+	location?: string | null
+	device: string
+	loginChannel: string
+	latestActivity: number
+	createdTime: number
+}
 
-export const MySessionSchema = SessionSchema.extend({
-	current: z.boolean(),
-})
-
-export type Session = z.infer<typeof SessionSchema>
-export type MySession = z.infer<typeof MySessionSchema>
+export interface MySession extends Session {
+	current: boolean
+}
 
 /**
  * 获取当前用户的活动会话列表
  */
 export const fetchGetMySessions = async (): Promise<MySession[]> => {
 	const data = await api.withTenantId().get("nexus-api/iam/me/sessions").json()
-	return z.array(MySessionSchema).parse(data)
+	return data as MySession[]
 }
 
 /**

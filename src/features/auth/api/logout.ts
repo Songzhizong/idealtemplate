@@ -1,22 +1,19 @@
 import { useMutation } from "@tanstack/react-query"
-import { z } from "zod"
 import { api } from "@/lib/api-client.ts"
 
 /**
- * Logout Response Schema
+ * Logout Response Interface
  */
-export const LogoutResponseSchema = z.object({
-	logoutIframeUris: z.array(z.string()).optional(),
-})
-
-export type LogoutResponse = z.infer<typeof LogoutResponseSchema>
+export interface LogoutResponse {
+	logoutIframeUris?: string[]
+}
 
 /**
  * Fetcher - 登出接口（通知后端清除 Session）
  */
 const logout = async (): Promise<LogoutResponse> => {
 	const response = await api.post("nexus-api/iam/logout").json()
-	return LogoutResponseSchema.parse(response)
+	return response as LogoutResponse
 }
 
 /**

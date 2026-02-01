@@ -1,8 +1,6 @@
 import { api } from "@/lib/api-client"
-import { createPageInfoSchema, type PageInfo } from "@/types/pagination"
-import { type User, UserSchema } from "../types"
-
-const UserPageSchema = createPageInfoSchema(UserSchema)
+import type { PageInfo } from "@/types/pagination"
+import type { User } from "../types"
 
 export interface GetUsersParams {
 	pageNumber: number
@@ -44,5 +42,5 @@ export async function getUsers(params: GetUsersParams): Promise<PageInfo<User>> 
 		})
 		.json()
 
-	return UserPageSchema.parse(response)
+	return response as PageInfo<User>
 }

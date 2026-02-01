@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api-client.ts"
-import { type UserProfile, UserProfileSchema } from "@/types/auth.ts"
+import type { UserProfile } from "@/types/auth.ts"
 
 /**
  * Fetcher - 获取当前登录用户个人信息
  */
 const getUserProfile = async (): Promise<UserProfile> => {
 	const json = await api.get("nexus-api/iam/me/profile").json()
-	return UserProfileSchema.parse(json) // Runtime Validation
+	return json as UserProfile
 }
 
 /**

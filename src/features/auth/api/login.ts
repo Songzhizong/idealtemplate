@@ -7,14 +7,12 @@ import { api } from "@/lib/api-client"
 // ============================================================================
 
 /**
- * Token Schema - 访问令牌信息
+ * Token Interface - 访问令牌信息
  */
-export const VisibleTokenSchema = z.object({
-	token_type: z.string(),
-	access_token: z.string(),
-})
-
-export type VisibleToken = z.infer<typeof VisibleTokenSchema>
+export interface VisibleToken {
+	token_type: string
+	access_token: string
+}
 
 /**
  * Factor Type Enum - 多因素认证方式
@@ -27,50 +25,42 @@ export enum FactorType {
 }
 
 /**
- * MFA Ticket Schema - 多因素认证票据
+ * MFA Ticket Interface - 多因素认证票据
  */
-export const MfaTicketSchema = z.object({
-	ticket: z.string(),
-	methods: z.array(z.enum(FactorType)),
-})
-
-export type MfaTicket = z.infer<typeof MfaTicketSchema>
+export interface MfaTicket {
+	ticket: string
+	methods: FactorType[]
+}
 
 /**
- * Change Password Ticket Schema - 修改密码票据
+ * Change Password Ticket Interface - 修改密码票据
  */
-export const ChangePasswordTicketSchema = z.object({
-	ticket: z.string(),
-	userId: z.string(), // Long 类型使用字符串接收
-})
-
-export type ChangePasswordTicket = z.infer<typeof ChangePasswordTicketSchema>
+export interface ChangePasswordTicket {
+	ticket: string
+	userId: string // Long 类型使用字符串接收
+}
 
 /**
- * Selectable Account Schema - 可选择的账号
+ * Selectable Account Interface - 可选择的账号
  */
-export const SelectableAccountSchema = z.object({
-	uid: z.string(), // Long 类型使用字符串接收
-	account: z.string(),
-	phone: z.string(),
-	email: z.string(),
-	registrationTime: z.coerce.number(),
-	lastActiveTime: z.coerce.number().nullable(),
-	blocked: z.boolean(),
-	accountExpired: z.boolean(),
-})
-
-export type SelectableAccount = z.infer<typeof SelectableAccountSchema>
+export interface SelectableAccount {
+	uid: string // Long 类型使用字符串接收
+	account: string
+	phone: string
+	email: string
+	registrationTime: number
+	lastActiveTime: number | null
+	blocked: boolean
+	accountExpired: boolean
+}
 
 /**
- * Select Account Ticket Schema - 选择账号票据
+ * Select Account Ticket Interface - 选择账号票据
  */
-export const SelectAccountTicketSchema = z.object({
-	ticket: z.string(),
-	accounts: z.array(SelectableAccountSchema),
-})
-
-export type SelectAccountTicket = z.infer<typeof SelectAccountTicketSchema>
+export interface SelectAccountTicket {
+	ticket: string
+	accounts: SelectableAccount[]
+}
 
 /**
  * Login Response Type Enum
@@ -89,17 +79,15 @@ export enum LoginResponseType {
 }
 
 /**
- * Login Response Schema - 登录响应
+ * Login Response Interface - 登录响应
  */
-export const LoginResponseSchema = z.object({
-	type: z.nativeEnum(LoginResponseType),
-	token: VisibleTokenSchema.nullable().optional(),
-	mfaTicket: MfaTicketSchema.nullable().optional(),
-	passwordTicket: ChangePasswordTicketSchema.nullable().optional(),
-	selectAccountTicket: SelectAccountTicketSchema.nullable().optional(),
-})
-
-export type LoginResponse = z.infer<typeof LoginResponseSchema>
+export interface LoginResponse {
+	type: LoginResponseType
+	token?: VisibleToken | null
+	mfaTicket?: MfaTicket | null
+	passwordTicket?: ChangePasswordTicket | null
+	selectAccountTicket?: SelectAccountTicket | null
+}
 
 // ============================================================================
 // 1. Password Login - 密码登录
@@ -120,19 +108,7 @@ export type PasswordLoginRequest = z.infer<typeof PasswordLoginRequestSchema>
  */
 export const handleLoginResponse = async (response: Response): Promise<LoginResponse> => {
 	const data = await response.json()
-	const result = LoginResponseSchema.safeParse(data)
-
-	if (result.success) {
-		return result.data
-	}
-
-	// 如果解析 LoginResponse 失败，且响应不是 2xx，则抛出原始错误或默认错误
-	if (!response.ok) {
-		throw new Error("API_ERROR")
-	}
-
-	// 如果是 2xx 但解析失败，抛出解析错误
-	return LoginResponseSchema.parse(data)
+	return data as LoginResponse
 }
 
 const passwordLogin = async (credentials: PasswordLoginRequest): Promise<LoginResponse> => {

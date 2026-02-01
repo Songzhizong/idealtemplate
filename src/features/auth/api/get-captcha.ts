@@ -1,17 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
-import { z } from "zod"
 import { getCertificate } from "@/features/auth/utils/certificate"
 import { api } from "@/lib/api-client"
 
 /**
- * Get Captcha Response Schema
+ * Get Captcha Response Interface
  */
-export const GetCaptchaResponseSchema = z.object({
-	imageBase64: z.string(),
-	provider: z.string(),
-})
-
-export type GetCaptchaResponse = z.infer<typeof GetCaptchaResponseSchema>
+export interface GetCaptchaResponse {
+	imageBase64: string
+	provider: string
+}
 
 /**
  * Fetcher - 获取图片验证码
@@ -22,7 +19,7 @@ const getCaptcha = async (certificate: string): Promise<GetCaptchaResponse> => {
 			searchParams: { certificate },
 		})
 		.json()
-	return GetCaptchaResponseSchema.parse(json)
+	return json as GetCaptchaResponse
 }
 
 /**

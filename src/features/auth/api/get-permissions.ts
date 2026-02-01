@@ -1,15 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
-import { z } from "zod"
 import { api } from "@/lib/api-client"
 import { env } from "@/lib/env"
 
 /**
- * Permission Identifiers Schema
+ * Permission Identifiers Type
  * 权限标识符列表（字符串数组）
  */
-const PermissionIdentsSchema = z.array(z.string())
-
-export type PermissionIdents = z.infer<typeof PermissionIdentsSchema>
+export type PermissionIdents = string[]
 
 /**
  * Fetcher - 获取当前应用的可用权限列表
@@ -19,7 +16,7 @@ const getPermissions = async (): Promise<PermissionIdents> => {
 	const appId = env.VITE_APP_ID
 	const url = `nexus-api/iam/front/apps/${appId}/available-permission-idents`
 	const json = await api.withTenantId().get(url).json()
-	return PermissionIdentsSchema.parse(json) // Runtime Validation
+	return json as PermissionIdents
 }
 
 /**
