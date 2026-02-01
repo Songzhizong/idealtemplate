@@ -1,6 +1,17 @@
-import { Activity, Clock, Laptop, LogOut, MapPin, Monitor, Smartphone } from "lucide-react"
-import { useState } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
+import { format, formatDistanceToNow } from "date-fns"
+import { zhCN } from "date-fns/locale"
+import { Activity, Clock, History, Laptop, LogOut, MapPin, Monitor, Smartphone } from "lucide-react"
+import { parseAsInteger } from "nuqs"
+import { useCallback, useMemo } from "react"
 import { toast } from "sonner"
+import {
+	DataTable,
+	DataTableContainer,
+	DataTableFilterBar,
+	DataTablePagination,
+	TableProvider,
+} from "@/components/table"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -15,16 +26,21 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { useDataTable } from "@/hooks"
 import { cn } from "@/lib/utils"
+import { type Api, fetchCurrentUserLoginLog } from "../api/login-log"
 import { useDeleteSession, useMySessions } from "../api/session"
+
+const getDeviceIcon = (device: string) => {
+	if (device.includes("iPhone") || device.includes("Android") || device.includes("Mobile")) {
+		return <Smartphone className="size-5 text-muted-foreground" />
+	}
+	if (device.includes("Mac") || device.includes("Windows") || device.includes("Linux")) {
+		return <Laptop className="size-5 text-muted-foreground" />
+	}
+	return <Monitor className="size-5 text-muted-foreground" />
+}
 
 export function ActivitySettings() {
 	const { data: sessions = [], isLoading } = useMySessions()
@@ -33,58 +49,99 @@ export function ActivitySettings() {
 	)
 	const deleteSession = useDeleteSession()
 
-	const [loginLogs] = useState([
-		{
-			id: "1",
-			timestamp: "2024-01-30 14:32:15",
-			device: "MacBook Pro - Chrome",
-			ip: "192.168.1.100",
-			location: "北京, 中国",
-			status: "success" as const,
-		},
-		{
-			id: "2",
-			timestamp: "2024-01-30 08:15:42",
-			device: "iPhone 14 - Safari",
-			ip: "192.168.1.101",
-			location: "北京, 中国",
-			status: "success" as const,
-		},
-		{
-			id: "3",
-			timestamp: "2024-01-29 22:45:08",
-			device: "Unknown Device - Chrome",
-			ip: "198.51.100.42",
-			location: "广州, 中国",
-			status: "failed" as const,
-		},
-		{
-			id: "4",
-			timestamp: "2024-01-29 09:20:33",
-			device: "Windows PC - Edge",
-			ip: "203.0.113.45",
-			location: "上海, 中国",
-			status: "success" as const,
-		},
-		{
-			id: "5",
-			timestamp: "2024-01-28 16:55:19",
-			device: "MacBook Pro - Chrome",
-			ip: "192.168.1.100",
-			location: "北京, 中国",
-			status: "success" as const,
-		},
-	])
+	const loginLogColumns = useMemo<ColumnDef<Api.LoginLog.LoginLogVO>[]>(
+		() => [
+			{
+				accessorKey: "loginTime",
+				header: "时间",
+				enableSorting: false,
+				cell: ({ row }) => {
+					const time = row.original.loginTime
+					if (!time) return <div className="font-mono text-sm">-</div>
+					const date = new Date(Number(time))
+					return (
+						<div className="flex flex-col gap-0.5">
+							<span className="text-sm font-medium">
+								{formatDistanceToNow(date, { addSuffix: true, locale: zhCN })}
+							</span>
+							<span className="text-xs text-muted-foreground font-mono">
+								{format(date, "yyyy-MM-dd HH:mm:ss")}
+							</span>
+						</div>
+					)
+				},
+			},
+			{
+				accessorKey: "device",
+				header: "设备/浏览器",
+				enableSorting: false,
+				cell: ({ row }) => (
+					<div className="flex items-center gap-2">
+						{getDeviceIcon(row.original.device)}
+						<span className="max-w-50 truncate" title={row.original.userAgent}>
+							{row.original.device}
+						</span>
+					</div>
+				),
+			},
+			{
+				accessorKey: "loginIp",
+				header: "IP / 位置",
+				enableSorting: false,
+				cell: ({ row }) => (
+					<div className="flex flex-col gap-0.5">
+						{row.original.loginLocation && (
+							<span className="text-sm">{row.original.loginLocation}</span>
+						)}
+						<span className="font-mono text-xs text-muted-foreground">{row.original.loginIp}</span>
+					</div>
+				),
+			},
+			{
+				accessorKey: "success",
+				header: "状态",
+				enableSorting: false,
+				cell: ({ row }) => (
+					<Badge
+						variant={row.original.success === false ? "destructive" : "secondary"}
+						className={cn(
+							row.original.success !== false &&
+								"bg-success-subtle text-success-on-subtle border-success/20 border",
+						)}
+					>
+						{row.original.success === false ? "失败" : "成功"}
+					</Badge>
+				),
+			},
+		],
+		[],
+	)
 
-	const getDeviceIcon = (device: string) => {
-		if (device.includes("iPhone") || device.includes("Android") || device.includes("Mobile")) {
-			return <Smartphone className="size-5 text-muted-foreground" />
-		}
-		if (device.includes("Mac") || device.includes("Windows") || device.includes("Linux")) {
-			return <Laptop className="size-5 text-muted-foreground" />
-		}
-		return <Monitor className="size-5 text-muted-foreground" />
-	}
+	const { table, filters, loading, empty, fetching, refetch, pagination } = useDataTable({
+		queryKey: ["login-logs"],
+		queryFn: (params) => fetchCurrentUserLoginLog(params),
+		enableServerSorting: false,
+		columns: loginLogColumns,
+		filterParsers: {
+			loginTimeStart: parseAsInteger,
+			loginTimeEnd: parseAsInteger,
+		},
+	})
+
+	// biome-ignore lint/suspicious/noExplicitAny: nuqs dynamic keys
+	const filterState = filters.state as any
+
+	const handleSearch = useCallback(async () => {
+		await refetch()
+	}, [refetch])
+
+	const handleReset = useCallback(() => {
+		filters.reset()
+	}, [filters])
+
+	const handleRefresh = useCallback(async () => {
+		await refetch()
+	}, [refetch])
 
 	const handleRevokeSession = async (sessionId: string) => {
 		try {
@@ -244,50 +301,85 @@ export function ActivitySettings() {
 			{/* Login Logs */}
 			<Card>
 				<CardHeader>
-					<CardTitle>登录日志</CardTitle>
+					<div className="flex items-center gap-2">
+						<History className="size-5" />
+						<CardTitle>登录日志</CardTitle>
+					</div>
 					<CardDescription>查看你的登录历史记录，包括成功和失败的尝试</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="rounded-lg border border-border/50 overflow-x-auto">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-border/50">
-									<TableHead className="min-w-30">时间</TableHead>
-									<TableHead className="min-w-30">设备/浏览器</TableHead>
-									<TableHead className="min-w-25">IP 地址</TableHead>
-									<TableHead className="min-w-25">位置</TableHead>
-									<TableHead className="min-w-20">状态</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{loginLogs.map((log) => (
-									<TableRow key={log.id} className="border-border/50">
-										<TableCell className="font-mono text-sm">{log.timestamp}</TableCell>
-										<TableCell>{log.device}</TableCell>
-										<TableCell className="font-mono text-sm">{log.ip}</TableCell>
-										<TableCell>{log.location}</TableCell>
-										<TableCell>
-											{log.status === "success" ? (
-												<Badge
-													variant="secondary"
-													className="bg-success-subtle text-success-on-subtle border-success/20 border"
-												>
-													成功
-												</Badge>
-											) : (
-												<Badge variant="destructive">失败</Badge>
-											)}
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</div>
-					<div className="mt-4 flex justify-center">
-						<Button variant="outline" size="sm">
-							加载更多
-						</Button>
-					</div>
+					<TableProvider
+						table={table}
+						loading={loading}
+						empty={empty}
+						pagination={pagination}
+						onPageChange={(page) => table.setPageIndex(page - 1)}
+						onPageSizeChange={(size) => table.setPageSize(size)}
+					>
+						<DataTableContainer
+							toolbar={
+								<DataTableFilterBar
+									onSearch={handleSearch}
+									onReset={handleReset}
+									onRefresh={handleRefresh}
+								>
+									<div className="flex items-center gap-2">
+										<div className="flex items-center gap-2">
+											<Input
+												type="date"
+												className="h-9 w-40"
+												value={
+													filterState.loginTimeStart
+														? format(new Date(filterState.loginTimeStart), "yyyy-MM-dd")
+														: ""
+												}
+												onChange={(e) => {
+													const date = e.target.value
+													if (date) {
+														filters.set("loginTimeStart", new Date(date).getTime())
+													} else {
+														filters.set("loginTimeStart", null)
+													}
+												}}
+											/>
+											<span className="text-muted-foreground">-</span>
+											<Input
+												type="date"
+												className="h-9 w-40"
+												value={
+													filterState.loginTimeEnd
+														? format(new Date(filterState.loginTimeEnd), "yyyy-MM-dd")
+														: ""
+												}
+												onChange={(e) => {
+													const date = e.target.value
+													if (date) {
+														// 设置为当天的 23:59:59.999
+														const d = new Date(date)
+														d.setHours(23, 59, 59, 999)
+														filters.set("loginTimeEnd", d.getTime())
+													} else {
+														filters.set("loginTimeEnd", null)
+													}
+												}}
+											/>
+										</div>
+									</div>
+								</DataTableFilterBar>
+							}
+							table={
+								<DataTable
+									table={table}
+									loading={loading}
+									empty={empty}
+									emptyText="暂无登录日志数据"
+									fetching={fetching}
+									maxHeight="calc(100vh - 24rem)"
+								/>
+							}
+							pagination={<DataTablePagination />}
+						/>
+					</TableProvider>
 				</CardContent>
 			</Card>
 		</div>
