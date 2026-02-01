@@ -66,6 +66,7 @@
 		"nuqs": "^2.8.6",
 		"pinyin-pro": "^3.28.0",
 		"react": "^19.2.3",
+		"react-day-picker": "^9.13.0",
 		"react-dom": "^19.2.3",
 		"react-hook-form": "^7.71.1",
 		"recharts": "^3.7.0",

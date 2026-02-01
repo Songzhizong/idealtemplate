@@ -26,7 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useDataTable } from "@/hooks"
 import { cn } from "@/lib/utils"
 import { type Api, fetchCurrentUserLoginLog } from "../api/login-log"
@@ -325,34 +325,27 @@ export function ActivitySettings() {
 								>
 									<div className="flex items-center gap-2">
 										<div className="flex items-center gap-2">
-											<Input
-												type="date"
-												className="h-9 w-40 dark:[color-scheme:dark]"
+											<DatePicker
 												value={
 													filterState.loginTimeStart
-														? format(new Date(filterState.loginTimeStart), "yyyy-MM-dd")
-														: ""
+														? new Date(filterState.loginTimeStart)
+														: undefined
 												}
-												onChange={(e) => {
-													const date = e.target.value
+												onChange={(date) => {
 													if (date) {
-														filters.set("loginTimeStart", new Date(date).getTime())
+														filters.set("loginTimeStart", date.getTime())
 													} else {
 														filters.set("loginTimeStart", null)
 													}
 												}}
+												placeholder="开始日期"
 											/>
 											<span className="text-muted-foreground">-</span>
-											<Input
-												type="date"
-												className="h-9 w-40 dark:[color-scheme:dark]"
+											<DatePicker
 												value={
-													filterState.loginTimeEnd
-														? format(new Date(filterState.loginTimeEnd), "yyyy-MM-dd")
-														: ""
+													filterState.loginTimeEnd ? new Date(filterState.loginTimeEnd) : undefined
 												}
-												onChange={(e) => {
-													const date = e.target.value
+												onChange={(date) => {
 													if (date) {
 														// 设置为当天的 23:59:59.999
 														const d = new Date(date)
@@ -362,6 +355,7 @@ export function ActivitySettings() {
 														filters.set("loginTimeEnd", null)
 													}
 												}}
+												placeholder="结束日期"
 											/>
 										</div>
 									</div>
