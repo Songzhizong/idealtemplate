@@ -1,10 +1,9 @@
-import { Copy, Download, Key, Lock, Plus, Shield, Smartphone, Trash2 } from "lucide-react"
+import { Copy, Download, Lock, Shield, Smartphone } from "lucide-react"
 import { type ChangeEvent, useState } from "react"
 import { toast } from "sonner"
 import {
 	AlertDialog,
 	AlertDialogAction,
-	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
@@ -20,14 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table"
+import { PasskeyManagement } from "./passkey-management"
 
 export function SecuritySettings() {
 	const [hasPassword] = useState(true) // TODO: Get from API
@@ -40,35 +32,6 @@ export function SecuritySettings() {
 
 	const [passwordStrength, setPasswordStrength] = useState(0)
 	const [twoFactorEnabled, setTwoFactorEnabled] = useState(true)
-
-	const [passkeys] = useState([
-		{
-			id: "1",
-			name: "MacBook Pro - Chrome",
-			created: "2024-01-15",
-			lastUsed: "2024-01-30",
-		},
-		{
-			id: "2",
-			name: "iPhone 14 - Safari",
-			created: "2024-01-10",
-			lastUsed: "2024-01-29",
-		},
-		{
-			id: "3",
-			name: "Windows PC - Edge",
-			created: "2023-12-20",
-			lastUsed: "2024-01-25",
-		},
-	])
-
-	const recoveryCodes = [
-		"A1B2-C3D4-E5F6",
-		"G7H8-I9J0-K1L2",
-		"M3N4-O5P6-Q7R8",
-		"S9T0-U1V2-W3X4",
-		"Y5Z6-A7B8-C9D0",
-	]
 
 	const handlePasswordChange = (field: string, value: string) => {
 		setPassword({ ...password, [field]: value })
@@ -114,11 +77,13 @@ export function SecuritySettings() {
 		toast.success("恢复代码已下载")
 	}
 
-	const handleDeletePasskey = (id: string) => {
-		// id used for deletion logic
-		console.log(id)
-		toast.success("Passkey 已删除")
-	}
+	const recoveryCodes = [
+		"A1B2-C3D4-E5F6",
+		"G7H8-I9J0-K1L2",
+		"M3N4-O5P6-Q7R8",
+		"S9T0-U1V2-W3X4",
+		"Y5Z6-A7B8-C9D0",
+	]
 
 	const getStrengthColor = () => {
 		if (passwordStrength >= 75) return "bg-green-500"
@@ -331,79 +296,7 @@ export function SecuritySettings() {
 				</CardContent>
 			</Card>
 
-			{/* Passkey Management */}
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<div>
-							<div className="flex items-center gap-2">
-								<Key className="size-5" />
-								<CardTitle>Passkey 管理</CardTitle>
-							</div>
-							<CardDescription className="mt-1.5">
-								使用 Passkey 实现更安全、更便捷的无密码登录
-							</CardDescription>
-						</div>
-						<Button size="sm" onClick={() => toast.info("添加 Passkey 功能")}>
-							<Plus className="mr-2 size-4" />
-							添加 Passkey
-						</Button>
-					</div>
-				</CardHeader>
-				<CardContent>
-					<div className="rounded-lg border border-border/50 overflow-x-auto">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-border/50">
-									<TableHead className="min-w-37.5">设备名称</TableHead>
-									<TableHead className="min-w-30">创建时间</TableHead>
-									<TableHead className="min-w-30">最后使用</TableHead>
-									<TableHead className="w-20" />
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{passkeys.map((passkey) => (
-									<TableRow key={passkey.id} className="border-border/50">
-										<TableCell className="font-medium">{passkey.name}</TableCell>
-										<TableCell>{passkey.created}</TableCell>
-										<TableCell>{passkey.lastUsed}</TableCell>
-										<TableCell>
-											<AlertDialog>
-												<AlertDialogTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-8 text-destructive hover:text-destructive"
-													>
-														<Trash2 className="size-4" />
-													</Button>
-												</AlertDialogTrigger>
-												<AlertDialogContent>
-													<AlertDialogHeader>
-														<AlertDialogTitle>确认删除</AlertDialogTitle>
-														<AlertDialogDescription>
-															确定要删除 "{passkey.name}" 这个 Passkey 吗？此操作无法撤销。
-														</AlertDialogDescription>
-													</AlertDialogHeader>
-													<AlertDialogFooter>
-														<AlertDialogCancel>取消</AlertDialogCancel>
-														<AlertDialogAction
-															onClick={() => handleDeletePasskey(passkey.id)}
-															className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-														>
-															删除
-														</AlertDialogAction>
-													</AlertDialogFooter>
-												</AlertDialogContent>
-											</AlertDialog>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</div>
-				</CardContent>
-			</Card>
+			<PasskeyManagement />
 		</div>
 	)
 }

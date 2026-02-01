@@ -70,7 +70,7 @@ export function LoginPage() {
 			</div>
 
 			{/* Main Content Grid */}
-			<div className="relative size-full min-h-screen grid lg:grid-cols-2">
+			<div className="relative size-full min-h-screen grid lg:grid-cols-2 max-w-450 mx-auto">
 				{/* Left Side - Brand Area */}
 				<div className="hidden lg:flex flex-col justify-center items-start px-16 xl:px-24  animate-float">
 					<div className="max-w-xl space-y-8">

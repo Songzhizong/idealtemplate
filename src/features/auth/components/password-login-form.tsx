@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff, Lock, Mail, RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -78,9 +77,7 @@ export function PasswordLoginForm({
 					onResponse?.(response)
 				}
 			},
-			onError: (e) => {
-				toast.error("Login failed. Please check your credentials.")
-				console.error("Login error:", e)
+			onError: () => {
 				handleRefreshCaptcha()
 			},
 		})
@@ -140,12 +137,12 @@ export function PasswordLoginForm({
 			{needCaptcha && (
 				<div className="space-y-2">
 					<Label htmlFor="captcha" className="text-gray-700 dark:text-gray-300">
-						Verification Code
+						验证码
 					</Label>
 					<div className="relative">
 						<Input
 							id="captcha"
-							placeholder="Enter code"
+							placeholder="请输入验证码"
 							autoComplete="off"
 							className="pr-32 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
 							{...form.register("captcha")}

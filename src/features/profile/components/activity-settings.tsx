@@ -160,10 +160,14 @@ export function ActivitySettings() {
 							<div
 								key={session.id}
 								className={cn(
-									"flex items-start justify-between rounded-lg border border-border/50 p-4 transition-colors",
-									session.isCurrent && "bg-success-subtle border-success/50",
+									"flex items-start justify-between rounded-lg border border-border/50 p-4 transition-all relative overflow-hidden",
+									session.isCurrent &&
+										"bg-primary/[0.03] border-primary/20 dark:bg-primary/[0.05] dark:border-primary/30 shadow-sm",
 								)}
 							>
+								{session.isCurrent && (
+									<div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/80" />
+								)}
 								<div className="flex gap-4">
 									<div className="mt-1">{getDeviceIcon(session.device)}</div>
 									<div className="space-y-1">
@@ -251,7 +255,7 @@ export function ActivitySettings() {
 											{log.status === "success" ? (
 												<Badge
 													variant="secondary"
-													className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+													className="bg-success-subtle text-success-on-subtle border-success/20 border"
 												>
 													成功
 												</Badge>

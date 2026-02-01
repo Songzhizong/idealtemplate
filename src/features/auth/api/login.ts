@@ -118,7 +118,7 @@ export type PasswordLoginRequest = z.infer<typeof PasswordLoginRequestSchema>
  * 通用登录响应处理逻辑
  * 支持处理 2xx 成功响应以及包含有效 LoginResponse 的 4xx 响应（如 MFA、密码过期等）
  */
-const handleLoginResponse = async (response: Response): Promise<LoginResponse> => {
+export const handleLoginResponse = async (response: Response): Promise<LoginResponse> => {
 	const data = await response.json()
 	const result = LoginResponseSchema.safeParse(data)
 
