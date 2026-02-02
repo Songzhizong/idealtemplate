@@ -1,4 +1,4 @@
-import { Edit2, Key, Plus, Trash2 } from "lucide-react"
+import { Check, Edit2, Fingerprint, Key, Plus, Trash2, X } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import {
@@ -16,14 +16,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table"
 import { formatTimestampToDateTime, formatTimestampToRelativeTime } from "@/lib/time-utils.ts"
 import { useDeletePasskey, usePasskeys, useRegisterPasskey, useUpdatePasskey } from "../api/passkey"
 
@@ -78,11 +70,6 @@ export function PasskeyManagement() {
 		}
 	}
 
-	const _formatDate = (timestamp: number) => {
-		if (!timestamp) return "-"
-		return new Date(timestamp).toLocaleString()
-	}
-
 	return (
 		<Card>
 			<CardHeader>
@@ -126,7 +113,7 @@ export function PasskeyManagement() {
 								<AlertDialogAction
 									onClick={(e) => {
 										e.preventDefault()
-										handleAddPasskey()
+										void handleAddPasskey()
 									}}
 									disabled={registerMutation.isPending}
 								>
@@ -138,106 +125,131 @@ export function PasskeyManagement() {
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="rounded-lg border border-border/50 overflow-x-auto">
-					<Table>
-						<TableHeader>
-							<TableRow className="border-border/50">
-								<TableHead className="min-w-37.5">设备名称</TableHead>
-								<TableHead className="min-w-30">创建时间</TableHead>
-								<TableHead className="min-w-30">最后使用</TableHead>
-								<TableHead className="w-24" />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{isLoading ? (
-								<TableRow>
-									<TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-										加载中...
-									</TableCell>
-								</TableRow>
-							) : passkeys?.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-										暂无 Passkey
-									</TableCell>
-								</TableRow>
-							) : (
-								passkeys?.map((passkey) => (
-									<TableRow key={passkey.id} className="border-border/50">
-										<TableCell className="font-medium">
-											{editingPasskey?.id === passkey.id ? (
-												<div className="flex items-center gap-2">
-													<Input
-														size={1}
-														className="h-8"
-														value={editingPasskey.nickname}
-														onChange={(e) =>
-															setEditingPasskey({ ...editingPasskey, nickname: e.target.value })
+				<div className="rounded-lg border border-border/50 divide-y divide-border/50">
+					{isLoading ? (
+						<div className="py-8 text-center text-muted-foreground">加载中...</div>
+					) : passkeys?.length === 0 ? (
+						<div className="py-8 text-center text-muted-foreground">暂无 Passkey</div>
+					) : (
+						passkeys?.map((passkey) => (
+							<div
+								key={passkey.id}
+								className="flex flex-col gap-4 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
+							>
+								<div className="flex items-start gap-4">
+									<div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+										<Fingerprint className="size-5" />
+									</div>
+									<div className="grid gap-1">
+										{editingPasskey?.id === passkey.id ? (
+											<div className="flex items-center gap-2">
+												<Input
+													size={1}
+													className="h-8 w-64 sm:w-80"
+													value={editingPasskey.nickname}
+													onChange={(e) =>
+														setEditingPasskey({
+															...editingPasskey,
+															nickname: e.target.value,
+														})
+													}
+													onKeyDown={(e) => {
+														if (e.key === "Enter") {
+															handleUpdateNickname()
 														}
-														onKeyDown={(e) => e.key === "Enter" && handleUpdateNickname()}
-														onBlur={handleUpdateNickname}
-														autoFocus
-													/>
-												</div>
-											) : (
-												<div className="flex items-center gap-2 group">
-													{passkey.credentialNickname}
+														if (e.key === "Escape") {
+															setEditingPasskey(null)
+														}
+													}}
+													autoFocus
+												/>
+												<div className="flex items-center gap-1">
 													<Button
 														variant="ghost"
 														size="icon"
-														className="size-6 opacity-0 group-hover:opacity-100 transition-opacity"
-														onClick={() =>
-															setEditingPasskey({
-																id: passkey.id,
-																nickname: passkey.credentialNickname,
-															})
-														}
+														className="size-7 text-foreground"
+														onClick={handleUpdateNickname}
 													>
-														<Edit2 className="size-3" />
+														<Check className="size-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-7 text-muted-foreground"
+														onClick={() => setEditingPasskey(null)}
+													>
+														<X className="size-4" />
 													</Button>
 												</div>
-											)}
-										</TableCell>
-										<TableCell>{formatTimestampToDateTime(passkey.createdTime)}</TableCell>
-										<TableCell>{formatTimestampToRelativeTime(passkey.lastUsedTime)}</TableCell>
-										<TableCell>
-											<div className="flex items-center justify-end gap-2">
-												<AlertDialog>
-													<AlertDialogTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="size-8 text-destructive hover:text-destructive"
-														>
-															<Trash2 className="size-4" />
-														</Button>
-													</AlertDialogTrigger>
-													<AlertDialogContent>
-														<AlertDialogHeader>
-															<AlertDialogTitle>确认删除</AlertDialogTitle>
-															<AlertDialogDescription>
-																确定要删除 "{passkey.credentialNickname}" 这个 Passkey
-																吗？此操作无法撤销。
-															</AlertDialogDescription>
-														</AlertDialogHeader>
-														<AlertDialogFooter>
-															<AlertDialogCancel>取消</AlertDialogCancel>
-															<AlertDialogAction
-																onClick={() => handleDeletePasskey(passkey.id)}
-																className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-															>
-																删除
-															</AlertDialogAction>
-														</AlertDialogFooter>
-													</AlertDialogContent>
-												</AlertDialog>
 											</div>
-										</TableCell>
-									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
+										) : (
+											<div className="flex items-center gap-2 group">
+												<p className="text-base font-medium text-foreground">
+													{passkey.credentialNickname}
+												</p>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-6 opacity-0 transition-opacity group-hover:opacity-100"
+													onClick={() =>
+														setEditingPasskey({
+															id: passkey.id,
+															nickname: passkey.credentialNickname,
+														})
+													}
+												>
+													<Edit2 className="size-3" />
+												</Button>
+											</div>
+										)}
+										<p className="text-sm text-muted-foreground">
+											最后使用：
+											<span className="ml-1 text-foreground">
+												{formatTimestampToRelativeTime(passkey.lastUsedTime)}
+											</span>
+										</p>
+									</div>
+								</div>
+								<div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+									<div className="flex flex-col items-start gap-0.5 text-xs text-muted-foreground sm:items-end">
+										<span className="hidden sm:inline-block">创建于</span>
+										<span className="font-mono text-foreground">
+											{formatTimestampToDateTime(passkey.createdTime)}
+										</span>
+									</div>
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8 text-destructive hover:text-destructive"
+											>
+												<Trash2 className="size-4" />
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>确认删除</AlertDialogTitle>
+												<AlertDialogDescription>
+													确定要删除 "{passkey.credentialNickname}" 这个 Passkey
+													吗？此操作无法撤销。
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>取消</AlertDialogCancel>
+												<AlertDialogAction
+													onClick={() => handleDeletePasskey(passkey.id)}
+													className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+												>
+													删除
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								</div>
+							</div>
+						))
+					)}
 				</div>
 			</CardContent>
 		</Card>
