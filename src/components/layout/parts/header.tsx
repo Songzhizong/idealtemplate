@@ -18,7 +18,10 @@ export function Header({ navItems, onSearchOpen }: HeaderProps) {
 	const headerHeight = useThemeStore((state) => state.layout.headerHeight)
 	const [isScrolled, setIsScrolled] = React.useState(false)
 
+	const [isMac, setIsMac] = React.useState(true)
+
 	React.useEffect(() => {
+		setIsMac(/Mac|iPhone|iPod|iPad/i.test(navigator.userAgent))
 		const onScroll = () => setIsScrolled(window.scrollY > 0)
 		onScroll()
 		window.addEventListener("scroll", onScroll, { passive: true })
@@ -48,7 +51,7 @@ export function Header({ navItems, onSearchOpen }: HeaderProps) {
 					<Search className="size-4" />
 					搜索
 					<span className="rounded-full border border-border bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground">
-						cmd k
+						{isMac ? "cmd k" : "ctrl k"}
 					</span>
 				</Button>
 				<Button
