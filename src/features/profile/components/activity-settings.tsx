@@ -129,12 +129,10 @@ export function ActivitySettings() {
 			},
 		})
 
-	// biome-ignore lint/suspicious/noExplicitAny: nuqs dynamic keys
-	const filterState = filters.state as any
-
-	const handleSearch = useCallback(async () => {
-		await refetch()
-	}, [refetch])
+	const filterState = filters.state as {
+		loginTimeStart?: number | null
+		loginTimeEnd?: number | null
+	}
 
 	const handleReset = useCallback(() => {
 		filters.reset()
@@ -143,6 +141,10 @@ export function ActivitySettings() {
 	const handleRefresh = useCallback(async () => {
 		await refetch()
 	}, [refetch])
+
+	const hasActiveFilters = useMemo(() => {
+		return Boolean(filterState.loginTimeStart || filterState.loginTimeEnd)
+	}, [filterState.loginTimeStart, filterState.loginTimeEnd])
 
 	const handleRevokeSession = async (sessionId: string) => {
 		try {
@@ -320,9 +322,9 @@ export function ActivitySettings() {
 						<DataTableContainer
 							toolbar={
 								<DataTableFilterBar
-									onSearch={handleSearch}
 									onReset={handleReset}
 									onRefresh={handleRefresh}
+									hasActiveFilters={hasActiveFilters}
 								>
 									<div className="flex items-center gap-2">
 										<div className="flex items-center gap-2">

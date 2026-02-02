@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react"
 import { parseAsString } from "nuqs"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import { AuthButton } from "@/components/auth/auth-button"
 import { PageContainer } from "@/components/common"
 import {
@@ -60,10 +60,6 @@ export function UsersPage() {
 		})
 
 	// Handlers
-	const handleSearch = useCallback(async () => {
-		await refetch()
-	}, [refetch])
-
 	const handleReset = useCallback(() => {
 		filters.reset()
 		// URL changes automatically trigger refetch via React Query
@@ -72,6 +68,15 @@ export function UsersPage() {
 	const handleRefresh = useCallback(async () => {
 		await refetch()
 	}, [refetch])
+
+	const hasActiveFilters = useMemo(() => {
+		const filterState = filters.state
+		return Object.entries(filterState).some(([key, value]) => {
+			if (key === "page" || key === "size" || key === "sort") return false
+			if (value === null || value === undefined || value === "") return false
+			return value !== "all"
+		})
+	}, [filters.state])
 
 	return (
 		<PageContainer className="flex flex-col h-full">
@@ -87,9 +92,9 @@ export function UsersPage() {
 					<DataTableContainer
 						toolbar={
 							<DataTableFilterBar
-								onSearch={handleSearch}
 								onReset={handleReset}
 								onRefresh={handleRefresh}
+								hasActiveFilters={hasActiveFilters}
 								actions={
 									<AuthButton
 										permission={PERMISSIONS.USERS_ADD}

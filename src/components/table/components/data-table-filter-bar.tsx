@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronUp, RefreshCw, RotateCcw, Search } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { ChevronDown, ChevronUp, RefreshCw, X } from "lucide-react"
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import { useDebouncedCallback } from "use-debounce"
 import { DataTableColumnToggle, useTableContext } from "@/components/table"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -23,9 +24,30 @@ export interface DataTableFilterBarProps {
 	 */
 	onSearch?: () => void | Promise<void>
 	/**
+	 * Trigger search immediately when these values change
+	 */
+	autoSearchDeps?: readonly unknown[]
+	/**
+	 * Trigger search with debounce when these values change
+	 */
+	debouncedSearchDeps?: readonly unknown[]
+	/**
+	 * Debounce delay for auto search (ms)
+	 * @default 500
+	 */
+	debounceMs?: number
+	/**
 	 * Reset callback
 	 */
 	onReset?: () => void
+	/**
+	 * Whether there are active filters for showing the clear action
+	 */
+	hasActiveFilters?: boolean
+	/**
+	 * Clear filters label
+	 */
+	clearLabel?: string
 	/**
 	 * Refresh callback
 	 */
@@ -53,7 +75,12 @@ export function DataTableFilterBar({
 	extraFilters,
 	actions,
 	onSearch,
+	autoSearchDeps,
+	debouncedSearchDeps,
+	debounceMs = 500,
 	onReset,
+	hasActiveFilters = false,
+	clearLabel = "清除筛选",
 	onRefresh,
 	className,
 	defaultExpanded = false,
@@ -62,30 +89,76 @@ export function DataTableFilterBar({
 	const { table } = useTableContext()
 	const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 	const [isRefreshing, setIsRefreshing] = useState(false)
+	const isRefreshingRef = useRef(false)
+	const onSearchRef = useRef(onSearch)
+	const autoSearchFirstRun = useRef(true)
+	const debouncedSearchFirstRun = useRef(true)
+
+	useEffect(() => {
+		onSearchRef.current = onSearch
+	}, [onSearch])
+
+	const triggerSearch = useCallback(async () => {
+		if (!onSearchRef.current || isRefreshingRef.current) return
+		isRefreshingRef.current = true
+		setIsRefreshing(true)
+		try {
+			await onSearchRef.current()
+		} finally {
+			isRefreshingRef.current = false
+			setIsRefreshing(false)
+		}
+	}, [])
+
+	const debouncedSearch = useDebouncedCallback(() => {
+		void triggerSearch()
+	}, debounceMs)
 
 	const handleRefresh = async () => {
-		if (!onRefresh || isRefreshing) return
+		if (!onRefresh || isRefreshingRef.current) return
+		isRefreshingRef.current = true
 		setIsRefreshing(true)
 		try {
 			await onRefresh()
 		} finally {
+			isRefreshingRef.current = false
 			setIsRefreshing(false)
 		}
 	}
 
-	const handleSearch = async () => {
-		if (!onSearch || isRefreshing) return
-		setIsRefreshing(true)
-		try {
-			await onSearch()
-		} finally {
-			setIsRefreshing(false)
+	const autoSearchEnabled = autoSearchDeps !== undefined
+	const debouncedSearchEnabled = debouncedSearchDeps !== undefined
+
+	useEffect(() => {
+		const depsLength = autoSearchDeps?.length ?? 0
+		if (!onSearchRef.current || !autoSearchEnabled || depsLength === 0) return
+		if (autoSearchFirstRun.current) {
+			autoSearchFirstRun.current = false
+			return
 		}
-	}
+		void triggerSearch()
+	}, [autoSearchDeps, autoSearchEnabled, triggerSearch])
+
+	useEffect(() => {
+		const depsLength = debouncedSearchDeps?.length ?? 0
+		if (!onSearchRef.current || !debouncedSearchEnabled || depsLength === 0) return
+		if (debouncedSearchFirstRun.current) {
+			debouncedSearchFirstRun.current = false
+			return
+		}
+		debouncedSearch()
+		return () => {
+			debouncedSearch.cancel()
+		}
+	}, [debouncedSearchDeps, debouncedSearchEnabled, debouncedSearch])
+
+	const hasAutoSearch = (autoSearchDeps?.length ?? 0) > 0 || (debouncedSearchDeps?.length ?? 0) > 0
 
 	const handleReset = async () => {
 		onReset?.()
-		await handleSearch()
+		if (!hasAutoSearch) {
+			await triggerSearch()
+		}
 	}
 
 	return (
@@ -95,30 +168,8 @@ export function DataTableFilterBar({
 				<div className="flex flex-1 flex-wrap items-center gap-2">
 					<div className="flex flex-wrap items-center gap-2">{children}</div>
 
-					<Separator orientation="vertical" className="mx-1 hidden h-6 md:block" />
-
 					{/* Search Actions - Now following query fields */}
 					<div className="flex items-center gap-2">
-						<Button
-							variant="default"
-							size="sm"
-							onClick={handleSearch}
-							className="h-9 px-4"
-							disabled={isRefreshing}
-						>
-							<Search className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-							查询
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleReset}
-							className="h-9 px-4"
-							disabled={isRefreshing}
-						>
-							<RotateCcw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-							重置
-						</Button>
 						{extraFilters && (
 							<Button
 								variant="ghost"
@@ -144,9 +195,9 @@ export function DataTableFilterBar({
 				<div className="flex items-center gap-2">
 					{actions}
 
-					{(onRefresh || !hideColumnToggle) && (
+					{(onRefresh || !hideColumnToggle || (onReset && hasActiveFilters)) && (
 						<>
-							{(actions || true) && <Separator orientation="vertical" className="mx-1 h-6" />}
+							<Separator orientation="vertical" className="mx-1 h-6" />
 							<div className="flex items-center gap-2">
 								{onRefresh && (
 									<Button
@@ -160,6 +211,18 @@ export function DataTableFilterBar({
 									</Button>
 								)}
 								{!hideColumnToggle && <DataTableColumnToggle table={table} />}
+								{onReset && hasActiveFilters && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleReset}
+										className="h-7 px-2 text-muted-foreground hover:text-foreground"
+										disabled={isRefreshing}
+									>
+										<X className="mr-1 h-3 w-3" />
+										{clearLabel}
+									</Button>
+								)}
 							</div>
 						</>
 					)}

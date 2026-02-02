@@ -1,13 +1,5 @@
-import {
-	BadgeCheck,
-	Building2,
-	CheckCircle2,
-	Mail,
-	Phone,
-	ShieldCheck,
-	User,
-	Users,
-} from "lucide-react"
+import { BadgeCheck, Building2, Mail, Phone, User, Users } from "lucide-react"
+import type React from "react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -111,22 +103,6 @@ export function GeneralSettings() {
 							icon={<Phone className="size-4 text-muted-foreground" />}
 							label="手机号码"
 							value={user.phone || "未设置"}
-						/>
-
-						<InfoItem
-							icon={<ShieldCheck className="size-4 text-muted-foreground" />}
-							label="MFA 安全认证"
-							value={user.mfaEnabled ? "已启用" : "未启用"}
-							valueClassName={
-								user.mfaEnabled ? "text-success font-medium" : "text-warning font-medium"
-							}
-						/>
-
-						<InfoItem
-							icon={<CheckCircle2 className="size-4 text-muted-foreground" />}
-							label="帐号状态"
-							value="激活"
-							valueClassName="text-success font-medium"
 						/>
 					</div>
 				</CardContent>
