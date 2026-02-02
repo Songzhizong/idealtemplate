@@ -1,9 +1,20 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { format, formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
-import { Activity, ClipboardList, History, Laptop, Monitor, Smartphone } from "lucide-react"
+import {
+	Activity,
+	ClipboardList,
+	Clock,
+	History,
+	Laptop,
+	LogOut,
+	MapPin,
+	Monitor,
+	Smartphone,
+} from "lucide-react"
 import { parseAsInteger } from "nuqs"
 import { useCallback, useMemo, useState } from "react"
+import { toast } from "sonner"
 import {
 	DataTable,
 	DataTableContainer,
@@ -11,7 +22,19 @@ import {
 	DataTablePagination,
 	TableProvider,
 } from "@/components/table"
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DateRangePicker } from "@/components/ui/date-picker-rac"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,6 +43,7 @@ import { OperationLogDetailDrawer, PersonalOperationLogTable } from "@/features/
 import { useDataTable } from "@/hooks"
 import { cn } from "@/lib/utils"
 import { type Api, fetchCurrentUserLoginLog } from "../api/login-log"
+import { useDeleteSession, useMySessions } from "../api/session"
 
 const getDeviceIcon = (device: string) => {
 	if (device.includes("iPhone") || device.includes("Android") || device.includes("Mobile")) {
@@ -31,11 +55,16 @@ const getDeviceIcon = (device: string) => {
 	return <Monitor className="size-5 text-muted-foreground" />
 }
 
-export function LogRecordsSettings() {
+export function ActivitySettings() {
+	const { data: sessions = [], isLoading } = useMySessions()
 	const { data: userProfile } = useUserProfile()
 	const [activeLogTab, setActiveLogTab] = useState("login")
 	const [detailOpen, setDetailOpen] = useState(false)
 	const [detailLogId, setDetailLogId] = useState<string | null>(null)
+	const sortedSessions = [...sessions].sort((a, b) =>
+		a.current === b.current ? 0 : a.current ? -1 : 1,
+	)
+	const deleteSession = useDeleteSession()
 
 	const loginLogColumns = useMemo<ColumnDef<Api.LoginLog.LoginLogVO>[]>(
 		() => [
@@ -134,6 +163,35 @@ export function LogRecordsSettings() {
 		return Boolean(filterState.loginTimeStart || filterState.loginTimeEnd)
 	}, [filterState.loginTimeStart, filterState.loginTimeEnd])
 
+	const handleRevokeSession = async (sessionId: string) => {
+		try {
+			await deleteSession.mutateAsync(sessionId)
+			toast.success("会话已注销")
+		} catch (error) {
+			console.error("Failed to revoke session:", error)
+		}
+	}
+
+	const handleRevokeAllSessions = async () => {
+		const otherSessions = sessions.filter((s) => !s.current)
+		if (otherSessions.length === 0) {
+			toast.info("没有其他可注销的会话")
+			return
+		}
+
+		const promise = Promise.all(otherSessions.map((s) => deleteSession.mutateAsync(s.id)))
+
+		toast.promise(promise, {
+			loading: "正在注销所有其他会话...",
+			success: "所有其他会话已注销",
+			error: "部分会话注销失败",
+		})
+	}
+
+	const formatDate = (timestamp: number) => {
+		return new Date(timestamp).toLocaleString()
+	}
+
 	const handleOpenDetail = useCallback((id: string) => {
 		setDetailLogId(id)
 		setDetailOpen(true)
@@ -147,15 +205,139 @@ export function LogRecordsSettings() {
 	}, [])
 
 	return (
-		<div className="flex-1 flex flex-col min-h-0">
-			{/* 移除固定高度，改为自适应以修复滚动条问题 */}
-			<Card className="flex flex-col overflow-hidden flex-1 min-h-0">
+		<div className="space-y-6">
+			{/* Active Sessions */}
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<div>
+							<div className="flex items-center gap-2">
+								<Activity className="size-5" />
+								<CardTitle>活动会话</CardTitle>
+							</div>
+							<CardDescription className="mt-1.5">管理你在不同设备上的登录会话</CardDescription>
+						</div>
+						<AlertDialog>
+							<AlertDialogTrigger asChild>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={isLoading || sessions.filter((s) => !s.current).length === 0}
+								>
+									<LogOut className="mr-2 size-4" />
+									注销所有其他会话
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>注销所有其他会话</AlertDialogTitle>
+									<AlertDialogDescription>
+										这将注销除当前设备外的所有会话。你需要在这些设备上重新登录。
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel>取消</AlertDialogCancel>
+									<AlertDialogAction onClick={handleRevokeAllSessions}>确认注销</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+					</div>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{isLoading ? (
+							<div className="flex h-32 items-center justify-center text-muted-foreground">
+								正在加载会话...
+							</div>
+						) : sessions.length === 0 ? (
+							<div className="flex h-32 items-center justify-center text-muted-foreground">
+								暂无活动会话
+							</div>
+						) : (
+							sortedSessions.map((session) => (
+								<div
+									key={session.id}
+									className={cn(
+										"flex items-start justify-between rounded-lg border border-border/50 p-4 transition-all relative overflow-hidden",
+										session.current &&
+											"bg-primary/3 border-primary/20 dark:bg-primary/5 dark:border-primary/30 shadow-sm",
+									)}
+								>
+									{session.current && (
+										<div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/80" />
+									)}
+									<div className="flex gap-4">
+										<div className="mt-1">{getDeviceIcon(session.device)}</div>
+										<div className="space-y-1">
+											<div className="flex items-center gap-2">
+												<h4 className="font-medium">{session.device}</h4>
+												{session.current && (
+													<Badge variant="default" className="text-xs">
+														当前设备
+													</Badge>
+												)}
+											</div>
+											<div className="flex flex-col gap-1 text-sm text-muted-foreground">
+												<div className="flex items-center gap-1.5">
+													<Monitor className="size-3.5" />
+													<span>{session.device}</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<MapPin className="size-3.5" />
+													<span>
+														{session.loginIp} · {session.location || "未知位置"}
+													</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<Clock className="size-3.5" />
+													<span>
+														最后活跃: {formatDate(session.latestActivity || session.createdTime)}
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									{!session.current && (
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Button variant="ghost" size="sm" disabled={deleteSession.isPending}>
+													注销
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>注销会话</AlertDialogTitle>
+													<AlertDialogDescription>
+														确定要注销 "{session.device}" 上的会话吗？
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>取消</AlertDialogCancel>
+													<AlertDialogAction
+														onClick={() => handleRevokeSession(session.id)}
+														disabled={deleteSession.isPending}
+													>
+														确认注销
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
+									)}
+								</div>
+							))
+						)}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Activity Logs */}
+			<Card className="h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
 				<Tabs
 					value={activeLogTab}
 					onValueChange={setActiveLogTab}
 					className="w-full flex-1 flex flex-col min-h-0"
 				>
-					<CardHeader className="shrink-0">
+					<CardHeader>
 						<div className="flex flex-col gap-3">
 							<div className="flex flex-wrap items-center justify-between gap-3">
 								<div className="flex items-center gap-2">
@@ -180,8 +362,8 @@ export function LogRecordsSettings() {
 							</CardDescription>
 						</div>
 					</CardHeader>
-					<CardContent className="flex-1 flex flex-col min-h-0 p-0">
-						<TabsContent value="login" className="mt-0 flex-1 flex flex-col min-h-0 p-6">
+					<CardContent className="flex-1 flex flex-col min-h-0">
+						<TabsContent value="login" className="mt-0 flex-1 flex flex-col min-h-0">
 							<TableProvider
 								table={table}
 								loading={loading}
@@ -191,7 +373,6 @@ export function LogRecordsSettings() {
 								onPageSizeChange={(size) => setPageSize(size)}
 							>
 								<DataTableContainer
-									className="flex-1 min-h-0"
 									toolbar={
 										<DataTableFilterBar
 											onReset={handleReset}
@@ -233,7 +414,6 @@ export function LogRecordsSettings() {
 									table={
 										<DataTable
 											table={table}
-											className="flex-1 min-h-0"
 											loading={loading}
 											empty={empty}
 											emptyText="暂无登录日志数据"
@@ -244,7 +424,7 @@ export function LogRecordsSettings() {
 								/>
 							</TableProvider>
 						</TabsContent>
-						<TabsContent value="operation" className="mt-0 flex-1 flex flex-col min-h-0 p-6">
+						<TabsContent value="operation" className="mt-0 flex-1 flex flex-col min-h-0">
 							<PersonalOperationLogTable
 								userId={userProfile?.userId ?? ""}
 								onViewDetail={handleOpenDetail}

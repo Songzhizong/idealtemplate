@@ -3,7 +3,7 @@ import { z } from "zod"
 import { ProfileLayout } from "@/features/profile"
 
 const profileSearchSchema = z.object({
-	tab: z.enum(["general", "security", "sessions", "logs", "preferences", "advanced"]).optional(),
+	tab: z.enum(["general", "security", "activity", "preferences", "advanced"]).optional(),
 })
 
 export const Route = createFileRoute("/_authenticated/profile")({

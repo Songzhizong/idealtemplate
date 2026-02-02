@@ -19,7 +19,7 @@ export interface MySession extends Session {
 }
 
 /**
- * 获取当前用户的活跃会话列表
+ * 获取当前用户的活动会话列表
  */
 export const fetchGetMySessions = async (): Promise<MySession[]> => {
 	const data = await api.withTenantId().get("nexus-api/iam/me/sessions").json()
