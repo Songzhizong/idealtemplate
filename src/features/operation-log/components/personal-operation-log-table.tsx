@@ -36,6 +36,7 @@ interface PersonalOperationLogTableProps {
 	className?: string
 	emptyText?: string
 	baseParams?: Partial<Api.OperationLog.SearchParams>
+	tableMaxHeight?: string
 }
 
 const successOptions = [
@@ -59,6 +60,7 @@ export function PersonalOperationLogTable({
 	className,
 	emptyText = "暂无操作日志数据",
 	baseParams,
+	tableMaxHeight,
 }: PersonalOperationLogTableProps) {
 	const [dateRange, setDateRange] = useState<
 		{ from: Date | undefined; to: Date | undefined } | undefined
@@ -291,7 +293,7 @@ export function PersonalOperationLogTable({
 		>
 			<TooltipProvider delayDuration={200}>
 				<DataTableContainer
-					className={cn("overflow-x-hidden [&_tr:hover_.detail-eye-btn]:opacity-100", className)}
+					className={cn("[&_tr:hover_.detail-eye-btn]:opacity-100", className)}
 					toolbar={
 						<DataTableFilterBar
 							onReset={handleReset}
@@ -360,6 +362,7 @@ export function PersonalOperationLogTable({
 							empty={empty}
 							emptyText={emptyText}
 							fetching={fetching}
+							maxHeight={tableMaxHeight}
 						/>
 					}
 					pagination={<DataTablePagination />}

@@ -68,7 +68,7 @@ export interface PaginatedTableProps<TData> {
 }
 
 /**
- * Complete paginated table with fixed header/pagination and scrollable body
+ * Complete paginated table with sticky header/pagination and optional internal scroll
  * Uses TableProvider to share table instance via context
  * All state management (column visibility, sorting, selection) goes through table instance
  */

@@ -41,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserProfile } from "@/features/auth"
 import { OperationLogDetailDrawer, PersonalOperationLogTable } from "@/features/operation-log"
 import { useDataTable } from "@/hooks"
+import { formatTimestampToRelativeTime } from "@/lib/time-utils.ts"
 import { cn } from "@/lib/utils"
 import { type Api, fetchCurrentUserLoginLog } from "../api/login-log"
 import { useDeleteSession, useMySessions } from "../api/session"
@@ -188,10 +189,6 @@ export function ActivitySettings() {
 		})
 	}
 
-	const formatDate = (timestamp: number) => {
-		return new Date(timestamp).toLocaleString()
-	}
-
 	const handleOpenDetail = useCallback((id: string) => {
 		setDetailLogId(id)
 		setDetailOpen(true)
@@ -291,7 +288,10 @@ export function ActivitySettings() {
 												<div className="flex items-center gap-1.5">
 													<Clock className="size-3.5" />
 													<span>
-														最后活跃: {formatDate(session.latestActivity || session.createdTime)}
+														最后活跃:{" "}
+														{formatTimestampToRelativeTime(
+															session.latestActivity || session.createdTime,
+														)}
 													</span>
 												</div>
 											</div>
@@ -331,7 +331,7 @@ export function ActivitySettings() {
 			</Card>
 
 			{/* Activity Logs */}
-			<Card className="h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+			<Card className="flex flex-col">
 				<Tabs
 					value={activeLogTab}
 					onValueChange={setActiveLogTab}

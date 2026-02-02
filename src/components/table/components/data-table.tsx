@@ -13,8 +13,8 @@ import {
 	type VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
-import type { ReactNode } from "react"
-import { useRef, useState } from "react"
+import type React from "react"
+import { type ReactNode, useRef, useState } from "react"
 import type { PaginationState } from "@/components/table"
 import { Button } from "@/components/ui/button"
 import {
@@ -74,7 +74,7 @@ export interface DataTableProps<TData> {
 	 */
 	className?: string | undefined
 	/**
-	 * Max height for scrollable area
+	 * Optional max height for internal scroll area (enables body scrolling)
 	 */
 	maxHeight?: string | undefined
 	/**
@@ -141,8 +141,11 @@ export function DataTableContent<TData>({
 	const totalColumns = table.getAllColumns().length
 	const headerRef = useRef<HTMLDivElement>(null)
 	const bodyRef = useRef<HTMLDivElement>(null)
+	const tableBodyWrapperClassName = cn(
+		"flex-1 min-h-0 w-full overflow-x-auto",
+		maxHeight && "overflow-y-auto",
+	)
 
-	// Sync header scroll with body scroll
 	const handleBodyScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		if (headerRef.current) {
 			headerRef.current.scrollLeft = e.currentTarget.scrollLeft
@@ -171,7 +174,7 @@ export function DataTableContent<TData>({
 	)
 
 	return (
-		<div className={cn("relative flex flex-col flex-1 min-h-0 w-full", className)}>
+		<div className={cn("relative flex w-full flex-1 min-h-0 flex-col", className)}>
 			{fetching && !loading && (
 				<div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
 					<div className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 shadow-lg border border-border">
@@ -181,8 +184,10 @@ export function DataTableContent<TData>({
 				</div>
 			)}
 
-			{/* Header Table */}
-			<div ref={headerRef} className="overflow-hidden border-b border-table-border bg-table-header">
+			<div
+				ref={headerRef}
+				className="sticky top-(--data-table-sticky-offset,0px) z-10 overflow-hidden border-b border-table-border bg-table-header"
+			>
 				<Table className="table-fixed">
 					<TableHeader className="bg-transparent border-none shadow-none [&_tr]:border-b-0">
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -235,11 +240,10 @@ export function DataTableContent<TData>({
 				</Table>
 			</div>
 
-			{/* Body Table */}
 			<div
 				ref={bodyRef}
 				onScroll={handleBodyScroll}
-				className="flex-1 overflow-auto min-h-0 [overflow-y:overlay]"
+				className={tableBodyWrapperClassName}
 				style={maxHeight ? { maxHeight } : undefined}
 			>
 				<Table className="table-fixed">

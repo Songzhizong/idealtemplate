@@ -9,6 +9,7 @@
 - **自动防抖搜索**：内置搜索防抖
 - **自动页码重置**：筛选变化时自动重置到第 1 页
 - **单一数据源**：URL 状态驱动一切
+- **页面滚动 + Sticky**：表头吸顶、分页器吸底保持上下文，不出现“双滚动条”
 
 ### 完整示例：带服务端分页的用户表格
 
@@ -180,6 +181,13 @@ export function UsersPage() {
 }
 ```
 
+#### 布局说明（建议必读）
+
+- 默认是**页面滚动**，并通过 Sticky 保持上下文：
+  - 表头吸顶（`top: 0`）
+  - 分页器吸底
+- 避免在表格外层加 `overflow-*`，否则 sticky 失效。
+
 #### 3. 筛选表单组件
 
 ```typescript
@@ -235,7 +243,8 @@ export function UsersFilterForm({ urlFilters, onSelectChange }: UsersFilterFormP
 
 ```typescript
 // ❌ 需要手动创建 useUsersFilters Hook
-const { urlFilters, setUrlFilters, resetFilters, getApiFilters } = useUsersFilters()
+const { urlFilters, setUrlFilters, resetFilters, getApiFilters } =
+  useUsersFilters();
 
 // ❌ 需要手动创建 useUsersQuery Hook
 const tableQuery = useUsersQuery({
@@ -248,18 +257,18 @@ const tableQuery = useUsersQuery({
     setUrlFilters({
       page: params.pageNumber,
       pageSize: params.pageSize,
-    })
+    });
   },
-})
+});
 
 // ❌ 手动处理搜索和重置
 const handleSearch = useCallback(async () => {
-  await tableQuery.refetch()
-}, [tableQuery])
+  await tableQuery.refetch();
+}, [tableQuery]);
 
 const handleReset = useCallback(() => {
-  resetFilters() // ❌ 需要在 resetFilters 内部手动写 page: 1
-}, [resetFilters])
+  resetFilters(); // ❌ 需要在 resetFilters 内部手动写 page: 1
+}, [resetFilters]);
 ```
 
 #### 🟢 After（新方式 - 一个 Hook 搞定）
@@ -290,6 +299,22 @@ const { table, filters, loading, empty, refetch, pagination } = useDataTable({
 ---
 
 ## 高级用法
+
+### 0. 固定高度容器下启用内部滚动
+
+当表格位于固定高度的容器（如弹窗、卡片、侧边栏）时，使用 `maxHeight` 开启内部滚动：
+
+```typescript
+<DataTable
+  table={table}
+  loading={loading}
+  empty={empty}
+  emptyText="暂无数据"
+  maxHeight="calc(100vh - 320px)"
+/>
+```
+
+> 仅在固定高度容器中使用 `maxHeight`，否则会产生“双滚动条”。
 
 ### 1. 在自定义组件中访问表格实例
 
@@ -385,29 +410,29 @@ export function UsersPageWithSelection() {
 
 ```typescript
 // features/users/hooks/use-users-filters.ts
-import { parseAsInteger, parseAsString, useQueryStates } from "nuqs"
-import { useCallback } from "react"
+import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
+import { useCallback } from "react";
 
 const filtersParser = {
   username: parseAsString.withDefault(""),
   status: parseAsString.withDefault("all"),
   page: parseAsInteger.withDefault(1),
   pageSize: parseAsInteger.withDefault(10),
-}
+};
 
 export function useUsersFilters() {
-  const [urlFilters, setUrlFilters] = useQueryStates(filtersParser)
+  const [urlFilters, setUrlFilters] = useQueryStates(filtersParser);
 
   // ⚠️ 关键：更新筛选条件时同步重置页码
   const updateSelectFilter = (key: string, value: string) => {
-    setUrlFilters({ [key]: value, page: 1 })
-  }
+    setUrlFilters({ [key]: value, page: 1 });
+  };
 
   const resetFilters = () => {
-    setUrlFilters({ username: "", status: "all", page: 1, pageSize: 10 })
-  }
+    setUrlFilters({ username: "", status: "all", page: 1, pageSize: 10 });
+  };
 
-  return { urlFilters, setUrlFilters, updateSelectFilter, resetFilters }
+  return { urlFilters, setUrlFilters, updateSelectFilter, resetFilters };
 }
 ```
 
@@ -415,10 +440,10 @@ export function useUsersFilters() {
 
 ```typescript
 // features/users/hooks/use-users-query.ts
-import type { ColumnDef } from "@tanstack/react-table"
-import { useTablePagination } from "@/components/table"
-import { getUsers } from "../api/get-users"
-import type { User } from "../types"
+import type { ColumnDef } from "@tanstack/react-table";
+import { useTablePagination } from "@/components/table";
+import { getUsers } from "../api/get-users";
+import type { User } from "../types";
 
 export function useUsersQuery({
   columns,
@@ -436,14 +461,14 @@ export function useUsersQuery({
         ...initialFilters,
         ...filters,
         ...(sorting && { sorting }),
-      })
+      });
     },
     columns,
     enableServerSorting: true,
     pageNumber,
     pageSize,
     onPaginationChange,
-  })
+  });
 }
 ```
 

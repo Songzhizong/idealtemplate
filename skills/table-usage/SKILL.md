@@ -9,10 +9,12 @@ description: "Use when implementing or modifying table components in this codeba
 
 ## Quick Workflow (推荐)
 
-1) **优先使用 `useDataTable`** 来管理分页、筛选、搜索、URL 状态。  
-2) **用 `TableProvider` 作为上下文容器**，并传入 `pagination`、`onPageChange`、`onPageSizeChange`。  
-3) **分页回调必须走 `useDataTable` 的 `setPage` / `setPageSize`**，避免直接 `table.setPageIndex` 破坏 nuqs 同步。  
-4) **筛选/搜索走 `filters`**：`filters.set` / `filters.reset` / `filters.onSearch`。
+1. **优先使用 `useDataTable`** 来管理分页、筛选、搜索、URL 状态。
+2. **用 `TableProvider` 作为上下文容器**，并传入 `pagination`、`onPageChange`、`onPageSizeChange`。
+3. **分页回调必须走 `useDataTable` 的 `setPage` / `setPageSize`**，避免直接 `table.setPageIndex` 破坏 nuqs 同步。
+4. **筛选/搜索走 `filters`**：`filters.set` / `filters.reset` / `filters.onSearch`。
+5. **默认页面滚动 + Sticky**：`DataTableContainer` 负责分页吸底；`DataTable` 表头吸顶。筛选区随页面滚动。
+6. **仅在固定高度容器中**，才给 `DataTable` 传 `maxHeight` 开启内部滚动。
 
 ## Must Follow Rules
 
@@ -21,76 +23,82 @@ description: "Use when implementing or modifying table components in this codeba
   - 不要在分页按钮里调用 `table.setPageIndex` 或 `table.setPageSize`。
   - 业务筛选需要在 `filterParsers` 中声明，并用 `filters.set` 修改。
   - 搜索走 `filters.onSearch`，不要自己做 debounce。
+- Sticky 相关：
+  - **不要给表格外层加 `overflow`**，会破坏 sticky（除非明确使用内部滚动）。
+  - **避免用 `gap` 分隔筛选区与表格**，会导致表头偏移异常。
+  - **圆角由 `DataTableContainer` 统一裁切**，不要给表头单独加圆角。
 - `DataTablePagination` 只能放在 `TableProvider` 内。
 - 表格 UI 组件只能用 `@/components/table` 与 `@/components/ui`。
 
 ## Minimal Example (分页 + 筛选)
 
 ```tsx
-import { parseAsString } from "nuqs"
+import { parseAsString } from "nuqs";
 import {
-	DataTable,
-	DataTableContainer,
-	DataTableFilterBar,
-	DataTablePagination,
-	TableProvider,
-} from "@/components/table"
-import { useDataTable } from "@/hooks"
+  DataTable,
+  DataTableContainer,
+  DataTableFilterBar,
+  DataTablePagination,
+  TableProvider,
+} from "@/components/table";
+import { useDataTable } from "@/hooks";
 
 export function UsersPage() {
-	const {
-		table,
-		filters,
-		loading,
-		empty,
-		fetching,
-		refetch,
-		pagination,
-		setPage,
-		setPageSize,
-	} = useDataTable({
-		queryKey: ["users"],
-		queryFn: getUsers,
-		columns: usersTableColumns,
-		filterParsers: {
-			status: parseAsString.withDefault("all"),
-		},
-		defaultFilters: {
-			status: "all",
-		},
-	})
+  const {
+    table,
+    filters,
+    loading,
+    empty,
+    fetching,
+    refetch,
+    pagination,
+    setPage,
+    setPageSize,
+  } = useDataTable({
+    queryKey: ["users"],
+    queryFn: getUsers,
+    columns: usersTableColumns,
+    filterParsers: {
+      status: parseAsString.withDefault("all"),
+    },
+    defaultFilters: {
+      status: "all",
+    },
+  });
 
-	return (
-		<TableProvider
-			table={table}
-			loading={loading}
-			empty={empty}
-			pagination={pagination}
-			onPageChange={(page) => setPage(page)}
-			onPageSizeChange={(size) => setPageSize(size)}
-		>
-			<DataTableContainer
-				toolbar={
-					<DataTableFilterBar
-						onSearch={async () => refetch()}
-						onReset={() => filters.reset()}
-						onRefresh={async () => refetch()}
-					>
-						{/* 筛选组件: filters.state + filters.set */}
-					</DataTableFilterBar>
-				}
-				table={
-					<DataTable
-						table={table}
-						loading={loading}
-						empty={empty}
-						fetching={fetching}
-					/>
-				}
-				pagination={<DataTablePagination />}
-			/>
-		</TableProvider>
-	)
+  return (
+    <TableProvider
+      table={table}
+      loading={loading}
+      empty={empty}
+      pagination={pagination}
+      onPageChange={(page) => setPage(page)}
+      onPageSizeChange={(size) => setPageSize(size)}
+    >
+      <DataTableContainer
+        toolbar={
+          <DataTableFilterBar
+            onSearch={async () => refetch()}
+            onReset={() => filters.reset()}
+            onRefresh={async () => refetch()}
+          >
+            {/* 筛选组件: filters.state + filters.set */}
+          </DataTableFilterBar>
+        }
+        table={
+          <DataTable
+            table={table}
+            loading={loading}
+            empty={empty}
+            fetching={fetching}
+            // 固定高度容器时才传 maxHeight
+            // maxHeight="calc(100vh - 320px)"
+          />
+        }
+        pagination={<DataTablePagination />}
+      />
+    </TableProvider>
+  );
 }
 ```
 

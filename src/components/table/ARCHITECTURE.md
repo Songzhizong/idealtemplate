@@ -13,16 +13,16 @@
 ```typescript
 // ✅ 好的做法：防止 undefined 导致崩溃
 const table = useReactTable({
-	data: pageData.data ?? [], // 永远保证是数组
-	columns,
-	// ...
-})
+  data: pageData.data ?? [], // 永远保证是数组
+  columns,
+  // ...
+});
 
 // ❌ 不好的做法：可能导致 table 内部崩溃
 const table = useReactTable({
-	data: pageData.data, // 如果 API 未返回，可能是 undefined
-	columns,
-})
+  data: pageData.data, // 如果 API 未返回，可能是 undefined
+  columns,
+});
 ```
 
 ### 1. 单一数据源
@@ -31,13 +31,13 @@ const table = useReactTable({
 
 ```typescript
 // ✅ 好的做法：单一数据源
-const { table } = useTableContext()
-const isVisible = column.getIsVisible()
-column.toggleVisibility()
+const { table } = useTableContext();
+const isVisible = column.getIsVisible();
+column.toggleVisibility();
 
 // ❌ 不好的做法：双重状态管理
-const [columnChecks, setColumnChecks] = useState([])
-const [columnVisibility, setColumnVisibility] = useState({})
+const [columnChecks, setColumnChecks] = useState([]);
+const [columnVisibility, setColumnVisibility] = useState({});
 // 现在你需要同步这两个状态！
 ```
 
@@ -86,6 +86,54 @@ DataTableToolbar / DataTable / 等 (通过 useTableContext 消费)
 />
 ```
 
+### 4. 布局与滚动策略（完整设计）
+
+#### 目标体验
+
+- **单一滚动**：默认使用页面滚动，避免“双滚动条”。
+- **上下文常驻**：表头吸顶，分页器吸底。
+- **可控内滚动**：仅在固定高度容器中启用内部滚动。
+
+#### 默认布局（页面滚动 + Sticky）
+
+- `DataTableContainer`：
+  - 吸底分页器（`pagination`）
+- `DataTable`：
+  - 吸顶表头（`thead` 模拟）
+  - **表头吸顶 top = 0**
+
+**关键机制**：`DataTable` 表头直接吸顶（`top: 0`），更加稳定可靠。筛选区随页面滚动。
+
+#### 固定高度容器（内部滚动）
+
+只有在容器高度固定时使用：
+
+```tsx
+<DataTable maxHeight="calc(100vh - 320px)" ... />
+```
+
+此时：
+
+- 表格内容区域内部滚动
+- 表头仍可吸顶（相对于表格内部滚动容器）
+- 分页器继续吸底
+
+#### 结构与层级（必须遵守）
+
+```
+DataTableContainer
+  ├─ Toolbar (normal flow)
+  ├─ DataTable (Header sticky top=0)
+  └─ Pagination (sticky bottom=0)
+```
+
+#### 约束与踩坑
+
+- **避免外层 overflow**：祖先元素设置 `overflow: hidden/auto/scroll` 会破坏 sticky。
+- **避免 gap**：筛选区与表格之间不要用 `gap`，否则 sticky 偏移会被额外间距干扰。
+- **圆角保持**：圆角必须由 `DataTableContainer` 统一裁切（`overflow-hidden`）。
+- **背景一致**：吸顶区域使用 `bg-card` 与表格卡片一致，避免突兀。
+
 ## 架构层次
 
 ### 第零层：高阶 Hook (`useDataTable`) - 推荐使用
@@ -93,6 +141,7 @@ DataTableToolbar / DataTable / 等 (通过 useTableContext 消费)
 **职责**：URL 状态管理、自动化最佳实践、消除胶水代码
 
 这是对 `useTablePagination` 的高阶封装，专为业务开发优化。它自动处理：
+
 - URL 状态同步（基于 `nuqs`）
 - 筛选变化时自动重置页码
 - 内置防抖搜索
@@ -107,22 +156,25 @@ export function useDataTable<TData>(options) {
     sort: parseAsString,
     q: parseAsString,
     ...filterParsers, // 业务筛选字段
-  })
-  
+  });
+
   // 2. 筛选操作（自动重置页码）
-  const setFilter = useCallback((key, value) => {
-    setUrlState((old) => ({
-      ...old,
-      [key]: value,
-      page: 1, // 🔥 核心：任何筛选变动，自动重置页码
-    }))
-  }, [setUrlState])
-  
+  const setFilter = useCallback(
+    (key, value) => {
+      setUrlState((old) => ({
+        ...old,
+        [key]: value,
+        page: 1, // 🔥 核心：任何筛选变动，自动重置页码
+      }));
+    },
+    [setUrlState],
+  );
+
   // 3. 防抖搜索
   const onSearch = useDebouncedCallback((value: string) => {
-    setFilter("q", value || null)
-  }, 500)
-  
+    setFilter("q", value || null);
+  }, 500);
+
   // 4. 重置所有筛选
   const resetFilters = useCallback(() => {
     setUrlState({
@@ -130,38 +182,48 @@ export function useDataTable<TData>(options) {
       size: urlState.size,
       sort: null,
       q: null,
-      ...Object.keys(filterParsers).reduce((acc, key) => ({ 
-        ...acc, 
-        [key]: defaultFilters[key] ?? null 
-      }), {})
-    })
-  }, [setUrlState, urlState.size, filterParsers, defaultFilters])
-  
+      ...Object.keys(filterParsers).reduce(
+        (acc, key) => ({
+          ...acc,
+          [key]: defaultFilters[key] ?? null,
+        }),
+        {},
+      ),
+    });
+  }, [setUrlState, urlState.size, filterParsers, defaultFilters]);
+
   // 5. 转换 URL 状态为 API 参数
   const apiParams = useMemo(() => {
     const params = {
       pageNumber: urlState.page,
       pageSize: urlState.size,
-    }
-    
+    };
+
     // 添加搜索、排序、业务筛选（过滤 null/"all" 值）
-    if (urlState.q) params.q = urlState.q
+    if (urlState.q) params.q = urlState.q;
     if (urlState.sort) {
-      const [field, order] = urlState.sort.split(".")
-      params.sorting = { field, order }
+      const [field, order] = urlState.sort.split(".");
+      params.sorting = { field, order };
     }
-    
+
     // 添加业务筛选（排除 null/undefined/empty/"all"）
     for (const [key, value] of Object.entries(urlState)) {
-      if (key !== "page" && key !== "size" && key !== "sort" && key !== "q" 
-          && value != null && value !== "" && value !== "all") {
-        params[key] = value
+      if (
+        key !== "page" &&
+        key !== "size" &&
+        key !== "sort" &&
+        key !== "q" &&
+        value != null &&
+        value !== "" &&
+        value !== "all"
+      ) {
+        params[key] = value;
       }
     }
-    
-    return params
-  }, [urlState])
-  
+
+    return params;
+  }, [urlState]);
+
   // 6. 调用底层 useTablePagination
   const tableQuery = useTablePagination({
     queryKey: [...queryKey, apiParams],
@@ -170,37 +232,40 @@ export function useDataTable<TData>(options) {
     pageNumber: urlState.page,
     pageSize: urlState.size,
     onPaginationChange: ({ pageNumber, pageSize }) => {
-      setUrlState({ page: pageNumber, size: pageSize })
+      setUrlState({ page: pageNumber, size: pageSize });
     },
     enableServerSorting,
-  })
-  
+  });
+
   // 7. 返回简化的 API
   return {
     ...tableQuery,
     filters: {
-      state: urlState,        // 当前筛选状态
-      set: setFilter,         // 设置单个筛选（自动重置页码）
-      reset: resetFilters,    // 重置所有筛选
-      onSearch,               // 防抖搜索处理器
+      state: urlState, // 当前筛选状态
+      set: setFilter, // 设置单个筛选（自动重置页码）
+      reset: resetFilters, // 重置所有筛选
+      onSearch, // 防抖搜索处理器
     },
-  }
+  };
 }
 ```
 
 **使用场景**：
+
 - ✅ 标准的 CRUD 列表页面
 - ✅ 需要 URL 状态持久化的表格
 - ✅ 带搜索和筛选的表格
 - ✅ 需要分享/书签功能的表格
 
 **优势**：
+
 - **零胶水代码**：无需手动同步 URL、无需手动重置页码
 - **强制最佳实践**：自动防抖、自动页码重置、URL 同步
 - **类型安全**：筛选状态完全类型化
 - **代码减少 47%**：一个 Hook 替代三个 Hook + 手动连线
 
 **示例**：
+
 ```typescript
 // 🔥 一个 Hook 搞定所有逻辑
 const { table, filters, loading, empty, refetch, pagination } = useDataTable<User>({
@@ -233,19 +298,19 @@ const { table, filters, loading, empty, refetch, pagination } = useDataTable<Use
 export function useTablePagination<TData>(options) {
   // 1. 使用 TanStack Query 获取数据
   const query = useQuery({ ... })
-  
+
   // 2. 管理内部状态
   const [sorting, setSorting] = useState([])
   const [rowSelection, setRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState("")
-  
+
   // 3. 自动重置页码逻辑（关键优化）
   useEffect(() => {
     if (globalFilter) {
       setPage(1) // 搜索时自动回到第一页
     }
   }, [globalFilter, setPage])
-  
+
   // 4. 创建表格实例（单一数据源）
   const table = useReactTable({
     data: pageData.data ?? [], // 防御性编程：确保始终是数组
@@ -257,7 +322,7 @@ export function useTablePagination<TData>(options) {
     autoResetPageIndex: false, // 手动控制页码重置
     // ...
   })
-  
+
   // 5. 返回表格实例 + 辅助函数
   return {
     table,           // ← 单一数据源
@@ -289,10 +354,10 @@ interface TableContextValue<TData = unknown> {
 }
 
 // Provider 必须是泛型组件
-export function TableProvider<TData>({ 
-  children, 
+export function TableProvider<TData>({
+  children,
   table, // table: Table<TData>
-  ...others 
+  ...others
 }: TableProviderProps<TData>) {
   return (
     <TableContext.Provider value={{ table, ...others }}>
@@ -321,6 +386,7 @@ export function PaginatedTable({ table, loading, empty, ... }) {
   return (
     <TableProvider table={table} loading={loading} empty={empty}>
       <DataTableContainer>
+        <DataTableFilterBar />
         <DataTable table={table} />
         <DataTablePagination />
       </DataTableContainer>
@@ -406,12 +472,14 @@ React 使用新状态重新渲染
 #### 使用 `useDataTable`（推荐）
 
 **适用场景**：
+
 - ✅ 标准的 CRUD 列表页面
 - ✅ 需要 URL 状态持久化（分享链接、书签）
 - ✅ 带搜索和多个筛选器的表格
 - ✅ 希望减少样板代码
 
 **优势**：
+
 - 零胶水代码（无需手动同步 URL）
 - 自动页码重置（筛选变化时）
 - 内置防抖搜索（500ms）
@@ -419,10 +487,11 @@ React 使用新状态重新渲染
 - 代码量减少 47%
 
 **示例**：
+
 ```typescript
 // Before: 3 个 Hook + 手动连线
 const { urlFilters, setUrlFilters, resetFilters } = useUsersFilters()
-const tableQuery = useUsersQuery({ 
+const tableQuery = useUsersQuery({
   pageNumber: urlFilters.page,
   onPaginationChange: (p) => setUrlFilters({ page: p.pageNumber, ... })
 })
@@ -434,26 +503,29 @@ const { table, filters, loading } = useDataTable({ ... })
 #### 使用 `useTablePagination`（底层）
 
 **适用场景**：
+
 - ⚠️ 客户端分页（无需服务端请求）
 - ⚠️ 不需要 URL 状态管理
 - ⚠️ 高度自定义的分页逻辑
 - ⚠️ 非标准的 API 响应格式
 
 **优势**：
+
 - 更细粒度的控制
 - 可以完全自定义状态管理
 - 不依赖 `nuqs`
 
 **示例**：
+
 ```typescript
 const tableQuery = useTablePagination({
   queryKey: ["users"],
   queryFn: async ({ pageNumber, pageSize }) => {
-    return customApiCall(pageNumber, pageSize)
+    return customApiCall(pageNumber, pageSize);
   },
   columns,
   // 完全手动控制
-})
+});
 ```
 
 ### 1. 无状态同步问题
@@ -466,12 +538,12 @@ const tableQuery = useTablePagination({
 
 ```typescript
 // 表格实例提供完整的类型信息
-const { table } = useTableContext<User>()
+const { table } = useTableContext<User>();
 
 // TypeScript 知道数据类型
-table.getRowModel().rows.forEach(row => {
-  const user: User = row.original  // ✅ 类型正确
-})
+table.getRowModel().rows.forEach((row) => {
+  const user: User = row.original; // ✅ 类型正确
+});
 ```
 
 ### 3. 可扩展性
@@ -482,12 +554,12 @@ table.getRowModel().rows.forEach(row => {
 // 想要添加导出功能？
 export function ExportButton() {
   const { table } = useTableContext()
-  
+
   const handleExport = () => {
     const allData = table.getRowModel().rows.map(row => row.original)
     exportToCSV(allData)
   }
-  
+
   return <Button onClick={handleExport}>导出</Button>
 }
 ```
@@ -539,9 +611,9 @@ return (
       onRefresh={refetch}
     >
       {/* 筛选器自动重置页码 */}
-      <Select 
-        value={filters.state.status} 
-        onValueChange={(v) => filters.set("status", v)} 
+      <Select
+        value={filters.state.status}
+        onValueChange={(v) => filters.set("status", v)}
       />
     </DataTableFilterBar>
     <DataTable table={table} />
@@ -549,50 +621,63 @@ return (
 )
 ```
 
-**优势**：
-- 自动处理 URL 同步
-- 筛选变化时自动重置页码
-- 内置防抖搜索
-- 代码量减少 47%
+### 模式 6：需要内部滚动的固定高度卡片
+
+当页面容器固定高度（如弹窗、侧边抽屉、卡片）时，显式给 `DataTable` 设置 `maxHeight`：
+
+```typescript
+<DataTable
+  table={table}
+  loading={loading}
+  empty={empty}
+  emptyText="暂无数据"
+  maxHeight="calc(100vh - 320px)"
+/>
+```
+
+> 仅在确实需要内部滚动时才使用 `maxHeight`。
+
+### 模式 7：表头吸顶
+
+表头会自动吸顶（`top: 0`），无需额外配置。筛选区会随页面滚动。
 
 ### 模式 1：受控的列可见性
 
 ```typescript
-const [columnVisibility, setColumnVisibility] = useState({})
+const [columnVisibility, setColumnVisibility] = useState({});
 
 const table = useTablePagination({
   // ...
   columnVisibility,
   onColumnVisibilityChange: setColumnVisibility,
-})
+});
 ```
 
 ### 模式 2：持久化状态
 
 ```typescript
 const [columnVisibility, setColumnVisibility] = useState(() => {
-  const stored = localStorage.getItem('table-columns')
-  return stored ? JSON.parse(stored) : {}
-})
+  const stored = localStorage.getItem("table-columns");
+  return stored ? JSON.parse(stored) : {};
+});
 
 useEffect(() => {
-  localStorage.setItem('table-columns', JSON.stringify(columnVisibility))
-}, [columnVisibility])
+  localStorage.setItem("table-columns", JSON.stringify(columnVisibility));
+}, [columnVisibility]);
 ```
 
 ### 模式 3：批量操作
 
 ```typescript
-const { table } = useTableContext()
+const { table } = useTableContext();
 
 const handleBulkDelete = () => {
   const selectedIds = table
     .getSelectedRowModel()
-    .rows
-    .map(row => row.original.id)
-  
-  deleteUsers(selectedIds)
-}
+    .rows.map((row) => row.original.id);
+
+  deleteUsers(selectedIds);
+};
 ```
 
 ### 模式 4：搜索与自动重置页码
@@ -600,12 +685,12 @@ const handleBulkDelete = () => {
 ```typescript
 const { table, globalFilter, setGlobalFilter } = useTablePagination({
   // ...
-})
+});
 
 // 当用户输入搜索关键词时，Hook 会自动将页码重置为 1
 const handleSearch = (value: string) => {
-  setGlobalFilter(value) // 自动触发 setPage(1)
-}
+  setGlobalFilter(value); // 自动触发 setPage(1)
+};
 ```
 
 ### 模式 5：跨页行选择
@@ -615,10 +700,10 @@ const { table } = useTablePagination({
   // ...
   getRowId: (row) => row.id, // 必需：提供稳定的行 ID
   // TanStack Table v8 会自动保留跨页选择
-})
+});
 
 // 用户可以在第 1 页选中行，翻到第 2 页，选择仍然保留
-const selectedRows = table.getSelectedRowModel().rows
+const selectedRows = table.getSelectedRowModel().rows;
 ```
 
 ## 应避免的反模式
@@ -627,8 +712,8 @@ const selectedRows = table.getSelectedRowModel().rows
 
 ```typescript
 // 不好：重复表格状态
-const [myColumnVisibility, setMyColumnVisibility] = useState({})
-const { table } = useTableContext()
+const [myColumnVisibility, setMyColumnVisibility] = useState({});
+const { table } = useTableContext();
 
 // 现在你有两个数据源了！
 ```
@@ -637,17 +722,17 @@ const { table } = useTableContext()
 
 ```typescript
 // 不好：手动过滤数据
-const filteredData = data.filter(item => item.status === 'active')
+const filteredData = data.filter((item) => item.status === "active");
 
 // 好的做法：使用表格的过滤功能
-table.setColumnFilters([{ id: 'status', value: 'active' }])
+table.setColumnFilters([{ id: "status", value: "active" }]);
 ```
 
 ### ❌ 不要传递冗余的 Props
 
 ```typescript
 // 不好：传递表格中已有的数据
-<MyComponent 
+<MyComponent
   table={table}
   data={table.getRowModel().rows}  // 冗余！
   columns={table.getAllColumns()}  // 冗余！
@@ -663,12 +748,12 @@ table.setColumnFilters([{ id: 'status', value: 'active' }])
 // 不好：假设数据总是存在
 const table = useReactTable({
   data: apiResponse.data, // 可能是 undefined
-})
+});
 
 // 好的做法：始终提供默认值
 const table = useReactTable({
   data: apiResponse.data ?? [],
-})
+});
 ```
 
 ### ❌ 不要忽略跨页选择的配置
@@ -677,13 +762,13 @@ const table = useReactTable({
 // 不好：没有提供 getRowId，跨页选择会失败
 const table = useTablePagination({
   // ...
-})
+});
 
 // 好的做法：提供稳定的行 ID
 const table = useTablePagination({
   // ...
   getRowId: (row) => row.id, // TanStack Table 会自动保留跨页选择
-})
+});
 ```
 
 ## 性能考虑
@@ -701,7 +786,7 @@ const pagination = useMemo(
     totalPages: pageData.pageInfo?.totalPages ?? 0,
   }),
   [pageNumber, pageSize, pageData.pageInfo],
-)
+);
 ```
 
 ### 2. 占位数据
@@ -723,9 +808,9 @@ const query = useQuery({
 ```typescript
 const table = useReactTable({
   data: pageData.data ?? [], // 防御性编程
-  manualPagination: true,  // ← 不在客户端分页
+  manualPagination: true, // ← 不在客户端分页
   pageCount: pagination.totalPages,
-})
+});
 ```
 
 ### 4. 自动重置控制
@@ -737,7 +822,7 @@ const table = useReactTable({
   // ...
   autoResetPageIndex: false, // 手动控制页码重置
   // 注意：TanStack Table v8 在提供 getRowId 时会自动保留跨页选择
-})
+});
 ```
 
 ## 关键优化点总结
@@ -751,9 +836,9 @@ const table = useReactTable({
 ```typescript
 useEffect(() => {
   if (globalFilter) {
-    setPage(1) // 搜索时自动回到第一页
+    setPage(1); // 搜索时自动回到第一页
   }
-}, [globalFilter, setPage])
+}, [globalFilter, setPage]);
 ```
 
 ### 2. 数据默认值防崩
@@ -765,7 +850,7 @@ useEffect(() => {
 ```typescript
 const table = useReactTable({
   data: pageData.data ?? [], // 永远保证是数组
-})
+});
 ```
 
 ### 3. 泛型透传
@@ -790,7 +875,7 @@ const table = useReactTable({
   getRowId: (row) => row.id, // 提供稳定的行 ID
   autoResetPageIndex: false, // 防止数据变化时重置页码
   // 注意：TanStack Table v8 会自动保留跨页选择，只要提供了 getRowId
-})
+});
 ```
 
 ## 复杂场景验证

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import React, { type ReactNode, useLayoutEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 export interface DataTableContainerProps {
@@ -26,8 +26,8 @@ export interface DataTableContainerProps {
 }
 
 /**
- * Container component that provides fixed header/pagination with scrollable table body
- * Similar to NaiveUI table layout behavior
+ * Container component that supports page scroll with sticky header/pagination.
+ * Use DataTable `maxHeight` when you need an internal scroll area.
  */
 export function DataTableContainer({
 	toolbar,
@@ -36,19 +36,70 @@ export function DataTableContainer({
 	height,
 	className,
 }: DataTableContainerProps) {
+	const containerRef = useRef<HTMLDivElement>(null)
+	const toolbarRef = useRef<HTMLDivElement>(null)
+	const [toolbarHeight, setToolbarHeight] = useState(0)
+
+	useLayoutEffect(() => {
+		if (toolbarRef.current) {
+			const updateHeight = () => {
+				if (toolbarRef.current) {
+					// getBoundingClientRect ensures we get the precise visual height including borders and padding
+					setToolbarHeight(toolbarRef.current.getBoundingClientRect().height)
+				}
+			}
+
+			// Measure immediately
+			updateHeight()
+
+			const resizeObserver = new ResizeObserver(() => {
+				updateHeight()
+			})
+
+			resizeObserver.observe(toolbarRef.current)
+			return () => resizeObserver.disconnect()
+		}
+	}, [])
+
 	return (
-		<div className={cn("flex flex-col gap-4", !height && "min-h-0 flex-1", className)}>
-			{toolbar && <div className="shrink-0">{toolbar}</div>}
+		<div
+			ref={containerRef}
+			className={cn("flex flex-col", !height && "min-h-0 flex-1", className)}
+			style={
+				{
+					"--data-table-sticky-offset": `${toolbarHeight}px`,
+				} as React.CSSProperties
+			}
+		>
 			<div
 				className={cn(
-					"flex flex-col overflow-hidden rounded-lg border border-[hsl(var(--table-border))] bg-card",
-					!height && "min-h-0 flex-1",
+					"flex flex-col rounded-lg border border-table-border bg-card",
+					// Only use overflow-hidden when we have a fixed height (internal scroll)
+					// Otherwise, let the sticky elements stick to the viewport
+					height ? "overflow-hidden" : "min-h-0 flex-1",
 				)}
 				style={height ? { height } : undefined}
 			>
+				{toolbar && (
+					<div
+						ref={toolbarRef}
+						className={cn(
+							"shrink-0 p-4 bg-card z-20",
+							// When no height (window scroll), toolbar sticks to top
+							!height && "sticky top-0 rounded-t-lg border-b border-table-border",
+						)}
+					>
+						{toolbar}
+					</div>
+				)}
 				{table}
 				{pagination && (
-					<div className="shrink-0 border-t border-[hsl(var(--table-border))] bg-[hsl(var(--table-header-bg))] p-4">
+					<div
+						className={cn(
+							"sticky bottom-0 z-10 shrink-0 border-t border-table-border bg-card p-4",
+							!height && "rounded-b-lg",
+						)}
+					>
 						{pagination}
 					</div>
 				)}
