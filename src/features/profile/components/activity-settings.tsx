@@ -1,9 +1,19 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { format, formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
-import { Activity, Clock, History, Laptop, LogOut, MapPin, Monitor, Smartphone } from "lucide-react"
+import {
+	Activity,
+	ClipboardList,
+	Clock,
+	History,
+	Laptop,
+	LogOut,
+	MapPin,
+	Monitor,
+	Smartphone,
+} from "lucide-react"
 import { parseAsInteger } from "nuqs"
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 import {
 	DataTable,
@@ -27,6 +37,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUserProfile } from "@/features/auth"
+import { OperationLogDetailDrawer, PersonalOperationLogTable } from "@/features/operation-log"
 import { useDataTable } from "@/hooks"
 import { cn } from "@/lib/utils"
 import { type Api, fetchCurrentUserLoginLog } from "../api/login-log"
@@ -44,6 +57,10 @@ const getDeviceIcon = (device: string) => {
 
 export function ActivitySettings() {
 	const { data: sessions = [], isLoading } = useMySessions()
+	const { data: userProfile } = useUserProfile()
+	const [activeLogTab, setActiveLogTab] = useState("login")
+	const [detailOpen, setDetailOpen] = useState(false)
+	const [detailLogId, setDetailLogId] = useState<string | null>(null)
 	const sortedSessions = [...sessions].sort((a, b) =>
 		a.current === b.current ? 0 : a.current ? -1 : 1,
 	)
@@ -175,6 +192,18 @@ export function ActivitySettings() {
 		return new Date(timestamp).toLocaleString()
 	}
 
+	const handleOpenDetail = useCallback((id: string) => {
+		setDetailLogId(id)
+		setDetailOpen(true)
+	}, [])
+
+	const handleDetailOpenChange = useCallback((open: boolean) => {
+		setDetailOpen(open)
+		if (!open) {
+			setDetailLogId(null)
+		}
+	}, [])
+
 	return (
 		<div className="space-y-6">
 			{/* Active Sessions */}
@@ -301,84 +330,121 @@ export function ActivitySettings() {
 				</CardContent>
 			</Card>
 
-			{/* Login Logs */}
+			{/* Activity Logs */}
 			<Card>
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<History className="size-5" />
-						<CardTitle>登录日志</CardTitle>
-					</div>
-					<CardDescription>查看你的登录历史记录，包括成功和失败的尝试</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<TableProvider
-						table={table}
-						loading={loading}
-						empty={empty}
-						pagination={pagination}
-						onPageChange={(page) => setPage(page)}
-						onPageSizeChange={(size) => setPageSize(size)}
-					>
-						<DataTableContainer
-							toolbar={
-								<DataTableFilterBar
-									onReset={handleReset}
-									onRefresh={handleRefresh}
-									hasActiveFilters={hasActiveFilters}
-								>
-									<div className="flex items-center gap-2">
-										<div className="flex items-center gap-2">
-											<DatePicker
-												value={
-													filterState.loginTimeStart
-														? new Date(filterState.loginTimeStart)
-														: undefined
-												}
-												onChange={(date) => {
-													if (date) {
-														filters.set("loginTimeStart", date.getTime())
-													} else {
-														filters.set("loginTimeStart", null)
-													}
-												}}
-												placeholder="开始日期"
-											/>
-											<span className="text-muted-foreground">-</span>
-											<DatePicker
-												value={
-													filterState.loginTimeEnd ? new Date(filterState.loginTimeEnd) : undefined
-												}
-												onChange={(date) => {
-													if (date) {
-														// 设置为当天的 23:59:59.999
-														const d = new Date(date)
-														d.setHours(23, 59, 59, 999)
-														filters.set("loginTimeEnd", d.getTime())
-													} else {
-														filters.set("loginTimeEnd", null)
-													}
-												}}
-												placeholder="结束日期"
-											/>
-										</div>
-									</div>
-								</DataTableFilterBar>
-							}
-							table={
-								<DataTable
-									table={table}
-									loading={loading}
-									empty={empty}
-									emptyText="暂无登录日志数据"
-									fetching={fetching}
-									maxHeight="calc(100vh - 24rem)"
+				<Tabs value={activeLogTab} onValueChange={setActiveLogTab} className="w-full">
+					<CardHeader>
+						<div className="flex flex-col gap-3">
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<div className="flex items-center gap-2">
+									<History className="size-5" />
+									<CardTitle>日志记录</CardTitle>
+								</div>
+								<TabsList variant="line">
+									<TabsTrigger value="login" className="gap-1.5">
+										<Activity className="size-4" />
+										登录日志
+									</TabsTrigger>
+									<TabsTrigger value="operation" className="gap-1.5">
+										<ClipboardList className="size-4" />
+										操作日志
+									</TabsTrigger>
+								</TabsList>
+							</div>
+							<CardDescription>
+								{activeLogTab === "login"
+									? "查看你的登录历史记录，包括成功和失败的尝试"
+									: "查看当前用户的操作记录与审计详情"}
+							</CardDescription>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<TabsContent value="login" className="mt-0">
+							<TableProvider
+								table={table}
+								loading={loading}
+								empty={empty}
+								pagination={pagination}
+								onPageChange={(page) => setPage(page)}
+								onPageSizeChange={(size) => setPageSize(size)}
+							>
+								<DataTableContainer
+									toolbar={
+										<DataTableFilterBar
+											onReset={handleReset}
+											onRefresh={handleRefresh}
+											hasActiveFilters={hasActiveFilters}
+										>
+											<div className="flex items-center gap-2">
+												<div className="flex items-center gap-2">
+													<DatePicker
+														value={
+															filterState.loginTimeStart
+																? new Date(filterState.loginTimeStart)
+																: undefined
+														}
+														onChange={(date) => {
+															if (date) {
+																filters.set("loginTimeStart", date.getTime())
+															} else {
+																filters.set("loginTimeStart", null)
+															}
+														}}
+														placeholder="开始日期"
+													/>
+													<span className="text-muted-foreground">-</span>
+													<DatePicker
+														value={
+															filterState.loginTimeEnd
+																? new Date(filterState.loginTimeEnd)
+																: undefined
+														}
+														onChange={(date) => {
+															if (date) {
+																// 设置为当天的 23:59:59.999
+																const d = new Date(date)
+																d.setHours(23, 59, 59, 999)
+																filters.set("loginTimeEnd", d.getTime())
+															} else {
+																filters.set("loginTimeEnd", null)
+															}
+														}}
+														placeholder="结束日期"
+													/>
+												</div>
+											</div>
+										</DataTableFilterBar>
+									}
+									table={
+										<DataTable
+											table={table}
+											loading={loading}
+											empty={empty}
+											emptyText="暂无登录日志数据"
+											fetching={fetching}
+											maxHeight="calc(100vh - 26rem)"
+										/>
+									}
+									pagination={<DataTablePagination />}
 								/>
-							}
-							pagination={<DataTablePagination />}
-						/>
-					</TableProvider>
-				</CardContent>
+							</TableProvider>
+						</TabsContent>
+						<TabsContent value="operation" className="mt-0">
+							<PersonalOperationLogTable
+								userId={userProfile?.userId ?? ""}
+								onViewDetail={handleOpenDetail}
+								emptyText="暂无操作日志数据"
+								maxHeight="calc(100vh - 26rem)"
+							/>
+						</TabsContent>
+					</CardContent>
+				</Tabs>
 			</Card>
+			<OperationLogDetailDrawer
+				open={detailOpen}
+				logId={detailLogId}
+				onOpenChange={handleDetailOpenChange}
+			/>
 		</div>
 	)
 }
