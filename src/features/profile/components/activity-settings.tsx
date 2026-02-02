@@ -36,7 +36,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { DatePicker } from "@/components/ui/date-picker"
+import { DateRangePicker } from "@/components/ui/date-picker-rac"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserProfile } from "@/features/auth"
 import { OperationLogDetailDrawer, PersonalOperationLogTable } from "@/features/operation-log"
@@ -381,39 +381,31 @@ export function ActivitySettings() {
 										>
 											<div className="flex items-center gap-2">
 												<div className="flex items-center gap-2">
-													<DatePicker
-														value={
-															filterState.loginTimeStart
+													<DateRangePicker
+														value={{
+															from: filterState.loginTimeStart
 																? new Date(filterState.loginTimeStart)
-																: undefined
-														}
-														onChange={(date) => {
-															if (date) {
-																filters.set("loginTimeStart", date.getTime())
+																: undefined,
+															to: filterState.loginTimeEnd
+																? new Date(filterState.loginTimeEnd)
+																: undefined,
+														}}
+														onChange={(range: { from: Date; to?: Date } | undefined) => {
+															if (range?.from) {
+																filters.set("loginTimeStart", range.from.getTime())
 															} else {
 																filters.set("loginTimeStart", null)
 															}
-														}}
-														placeholder="开始日期"
-													/>
-													<span className="text-muted-foreground">-</span>
-													<DatePicker
-														value={
-															filterState.loginTimeEnd
-																? new Date(filterState.loginTimeEnd)
-																: undefined
-														}
-														onChange={(date) => {
-															if (date) {
-																// 设置为当天的 23:59:59.999
-																const d = new Date(date)
+
+															if (range?.to) {
+																const d = new Date(range.to)
 																d.setHours(23, 59, 59, 999)
 																filters.set("loginTimeEnd", d.getTime())
 															} else {
 																filters.set("loginTimeEnd", null)
 															}
 														}}
-														placeholder="结束日期"
+														placeholder="选择日期范围"
 													/>
 												</div>
 											</div>

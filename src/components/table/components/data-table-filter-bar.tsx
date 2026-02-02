@@ -188,6 +188,19 @@ export function DataTableFilterBar({
 								)}
 							</Button>
 						)}
+
+						{onReset && hasActiveFilters && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleReset}
+								className="h-9 px-2 text-muted-foreground hover:text-foreground"
+								disabled={isRefreshing}
+							>
+								<X className="mr-1 h-4 w-4" />
+								{clearLabel}
+							</Button>
+						)}
 					</div>
 				</div>
 
@@ -195,7 +208,7 @@ export function DataTableFilterBar({
 				<div className="flex items-center gap-2">
 					{actions}
 
-					{(onRefresh || !hideColumnToggle || (onReset && hasActiveFilters)) && (
+					{(onRefresh || !hideColumnToggle) && (
 						<>
 							<Separator orientation="vertical" className="mx-1 h-6" />
 							<div className="flex items-center gap-2">
@@ -211,18 +224,6 @@ export function DataTableFilterBar({
 									</Button>
 								)}
 								{!hideColumnToggle && <DataTableColumnToggle table={table} />}
-								{onReset && hasActiveFilters && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={handleReset}
-										className="h-7 px-2 text-muted-foreground hover:text-foreground"
-										disabled={isRefreshing}
-									>
-										<X className="mr-1 h-3 w-3" />
-										{clearLabel}
-									</Button>
-								)}
 							</div>
 						</>
 					)}

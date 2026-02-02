@@ -11,7 +11,7 @@ import {
 } from "@/components/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { DateRangePicker } from "@/components/ui/date-picker-rac"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -305,7 +305,6 @@ export function PersonalOperationLogTable({
 										setDateRange(range ? { from: range.from, to: range.to } : undefined)
 									}
 									placeholder="时间范围"
-									className="w-60"
 								/>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
