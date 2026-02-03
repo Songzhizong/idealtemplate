@@ -114,7 +114,7 @@ export function flattenColorPalette(palette: ColorPalette): Record<string, strin
 	vars["--popover-foreground"] = hexToHSL(palette.text.primary)
 
 	vars["--muted"] = hexToHSL(palette.background.muted.default)
-	vars["--muted-foreground"] = hexToHSL(palette.background.muted.fg)
+	vars["--muted-foreground"] = hexToHSL(palette.text.tertiary)
 	vars["--accent"] = hexToHSL(palette.background.accent.default)
 	vars["--accent-foreground"] = hexToHSL(palette.background.accent.fg)
 
