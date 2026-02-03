@@ -475,15 +475,7 @@ export function FileManagerPage() {
 			setDialogTarget(null)
 			folderForm.reset()
 		},
-		[
-			dialogMode,
-			dialogTarget,
-			folderForm,
-			normalizedCatalogId,
-			queryClient,
-			refetchCatalogs,
-			bizType,
-		],
+		[dialogMode, dialogTarget, folderForm, normalizedCatalogId, queryClient, refetchCatalogs],
 	)
 
 	const handleOpenFolderDialog = useCallback(
@@ -528,7 +520,7 @@ export function FileManagerPage() {
 		setMoveTargets([])
 		setTargetCatalogId(null)
 		toast.success("已移动")
-	}, [moveTargets, queryClient, targetCatalogId, bizType, refetchCatalogs])
+	}, [moveTargets, queryClient, targetCatalogId, refetchCatalogs])
 
 	const handleSelectCatalog = useCallback(
 		(id: string | null) => {
@@ -631,14 +623,7 @@ export function FileManagerPage() {
 			}
 			if (action === "refresh") void refetchCatalogs()
 		},
-		[
-			handleDeleteItem,
-			handleMoveTargets,
-			handleOpenFolderDialog,
-			queryClient,
-			refetchCatalogs,
-			bizType,
-		],
+		[handleDeleteItem, handleMoveTargets, handleOpenFolderDialog, queryClient, refetchCatalogs],
 	)
 
 	const handleToolbarRefresh = useCallback(() => {

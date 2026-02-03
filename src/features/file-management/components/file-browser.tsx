@@ -12,6 +12,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import { formatTimestampToDateTime } from "@/lib/time-utils.ts"
 import type { FileManagerItem } from "../types"
 import { formatFileSize, getFileStyle, parseObjectSize } from "../utils/file-utils"
@@ -627,14 +628,8 @@ export const FileBrowser = memo(function FileBrowser({
 							/>
 						)}
 						{loading ? (
-							<div className="space-y-3 p-4">
-								<Skeleton className="h-6 w-40" />
-								<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-									{Array.from({ length: 8 }).map((_, index) => (
-										/* biome-ignore lint/suspicious/noArrayIndexKey: Fixed set of skeleton items */
-										<Skeleton key={`skeleton-${index}`} className="h-24 rounded-lg" />
-									))}
-								</div>
+							<div className="flex h-full items-center justify-center">
+								<Spinner className="size-8" />
 							</div>
 						) : viewMode === "grid" ? (
 							<div className="h-full overflow-auto p-4">
@@ -653,6 +648,13 @@ export const FileBrowser = memo(function FileBrowser({
 									dragOverId={dragOverId}
 									getPreviewUrl={getPreviewUrl}
 								/>
+								<div ref={observerRef} className="h-4 w-full">
+									{isFetchingNextPage && (
+										<div className="flex h-10 items-center justify-center p-4">
+											<Skeleton className="h-4 w-32" />
+										</div>
+									)}
+								</div>
 							</div>
 						) : (
 							<div className="flex h-full flex-col overflow-hidden">
@@ -669,6 +671,8 @@ export const FileBrowser = memo(function FileBrowser({
 									onDragLeaveItem={handleDragLeaveItem}
 									onDropOnItem={handleDropOnItem}
 									dragOverId={dragOverId}
+									observerRef={observerRef}
+									isFetchingNextPage={isFetchingNextPage}
 								/>
 							</div>
 						)}
@@ -707,14 +711,6 @@ export const FileBrowser = memo(function FileBrowser({
 					</div>
 				</div>
 			)}
-
-			<div ref={observerRef} className="h-4 w-full">
-				{isFetchingNextPage && (
-					<div className="flex h-10 items-center justify-center p-4">
-						<Skeleton className="h-4 w-32" />
-					</div>
-				)}
-			</div>
 		</div>
 	)
 })

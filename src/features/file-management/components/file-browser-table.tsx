@@ -1,5 +1,6 @@
 import { flexRender, type Table as ReactTable, type Row } from "@tanstack/react-table"
-import { type DragEvent, type MouseEvent, memo } from "react"
+import React, { type DragEvent, type MouseEvent, memo } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
 	Table,
 	TableBody,
@@ -24,6 +25,8 @@ interface FileBrowserTableProps {
 	onDragLeaveItem: () => void
 	onDropOnItem: (event: DragEvent, item: FileManagerItem) => void
 	dragOverId: string | null
+	observerRef?: React.RefObject<HTMLDivElement | null>
+	isFetchingNextPage?: boolean | undefined
 }
 
 const TableRowItem = memo(function TableRowItem({
@@ -97,6 +100,8 @@ export const FileBrowserTable = memo(function FileBrowserTable({
 	onDragLeaveItem,
 	onDropOnItem,
 	dragOverId,
+	observerRef,
+	isFetchingNextPage,
 }: FileBrowserTableProps) {
 	if (items.length === 0) {
 		return (
@@ -109,7 +114,7 @@ export const FileBrowserTable = memo(function FileBrowserTable({
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
 			{/* Separate Header Table */}
-			<div className="border-b border-gray-100 bg-gray-50/50 px-4">
+			<div className="border-b border-border bg-muted/50 px-4">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -158,6 +163,13 @@ export const FileBrowserTable = memo(function FileBrowserTable({
 						))}
 					</TableBody>
 				</Table>
+				<div ref={observerRef} className="h-4 w-full">
+					{isFetchingNextPage && (
+						<div className="flex h-10 items-center justify-center p-4">
+							<Skeleton className="h-4 w-32" />
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	)

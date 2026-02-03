@@ -1,4 +1,4 @@
-import * as React from "react"
+import type * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
@@ -33,12 +33,7 @@ type StatusBadgeProps = Omit<React.ComponentProps<typeof Badge>, "variant"> & {
 	variant?: StatusBadgeVariant
 }
 
-export function StatusBadge({
-	tone,
-	variant = "subtle",
-	className,
-	...props
-}: StatusBadgeProps) {
+export function StatusBadge({ tone, variant = "subtle", className, ...props }: StatusBadgeProps) {
 	return (
 		<Badge
 			variant="outline"

@@ -1,5 +1,9 @@
-import type { BadgeProps } from "@/components/ui/badge"
+import type { VariantProps } from "class-variance-authority"
+import type { StatusBadgeTone } from "@/components/common/status-badge"
+import type { badgeVariants } from "@/components/ui/badge"
 import { Api } from "@/features/core/operation-log/api/operation-log"
+
+type BadgeVariant = VariantProps<typeof badgeVariants>["variant"]
 
 const actionTypeLabelMap: Record<Api.ActionType, string> = {
 	[Api.ActionType.ADD]: "新增",
@@ -15,7 +19,7 @@ const actionTypeLabelMap: Record<Api.ActionType, string> = {
 	[Api.ActionType.OTHER]: "其他",
 }
 
-const actionTypeVariantMap: Record<Api.ActionType, BadgeProps["variant"]> = {
+const actionTypeToneMap: Record<Api.ActionType, StatusBadgeTone> = {
 	[Api.ActionType.ADD]: "success",
 	[Api.ActionType.UPDATE]: "info",
 	[Api.ActionType.DELETE]: "error",
@@ -26,7 +30,7 @@ const actionTypeVariantMap: Record<Api.ActionType, BadgeProps["variant"]> = {
 	[Api.ActionType.EXPORT]: "warning",
 	[Api.ActionType.UPLOAD]: "warning",
 	[Api.ActionType.DOWNLOAD]: "info",
-	[Api.ActionType.OTHER]: "secondary",
+	[Api.ActionType.OTHER]: "neutral",
 }
 
 export const actionTypeOptions = [
@@ -46,30 +50,30 @@ export const actionTypeOptions = [
 
 export const getActionTypeConfig = (type?: Api.ActionType | string | null) => {
 	if (!type) {
-		return { label: "未知", variant: "secondary" as BadgeProps["variant"] }
+		return { label: "未知", tone: "neutral" as StatusBadgeTone }
 	}
 
 	if (Object.values(Api.ActionType).includes(type as Api.ActionType)) {
 		const typed = type as Api.ActionType
 		return {
 			label: actionTypeLabelMap[typed],
-			variant: actionTypeVariantMap[typed],
+			tone: actionTypeToneMap[typed],
 		}
 	}
 
-	return { label: String(type), variant: "secondary" as BadgeProps["variant"] }
+	return { label: String(type), tone: "neutral" as StatusBadgeTone }
 }
 
-export const getHttpMethodVariant = (method?: string | null): BadgeProps["variant"] => {
+export const getHttpMethodVariant = (method?: string | null): BadgeVariant => {
 	if (!method) return "secondary"
 	const normalized = method.toUpperCase()
 
-	const map: Record<string, BadgeProps["variant"]> = {
-		GET: "success",
-		POST: "info",
-		PUT: "warning",
-		DELETE: "error",
-		PATCH: "info",
+	const map: Record<string, BadgeVariant> = {
+		GET: "outline",
+		POST: "secondary",
+		PUT: "outline",
+		DELETE: "destructive",
+		PATCH: "secondary",
 	}
 
 	return map[normalized] ?? "secondary"

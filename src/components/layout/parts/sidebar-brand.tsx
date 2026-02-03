@@ -30,7 +30,9 @@ export function SidebarBrand() {
 	}, [mode])
 
 	return (
-		<div className={cn("flex items-center gap-3 px-2", collapsed && "justify-center px-0")}>
+		<div
+			className={cn("flex items-center gap-3 px-2 pt-4 pb-1", collapsed && "justify-center px-0")}
+		>
 			<img
 				src={AppLogo}
 				alt={`${appTitle} logo`}

@@ -1,4 +1,4 @@
-import { ChevronLeft, User2 } from "lucide-react"
+import { ChevronLeft, Loader2, User2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -131,10 +131,10 @@ export function SelectAccountForm({ ticket, onSuccess, onBack }: SelectAccountFo
 			<Button
 				type="button"
 				onClick={handleConfirm}
-				loading={selectMutation.isPending}
-				disabled={!selectedUid}
+				disabled={!selectedUid || selectMutation.isPending}
 				className="w-full h-12 text-base shadow-md hover:shadow-lg transition-all rounded-2xl"
 			>
+				{selectMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
 				确认登录
 			</Button>
 

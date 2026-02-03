@@ -100,16 +100,20 @@ const GridItem = memo(function GridItem({
 						<span className="flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
 							<Folder className="size-7" />
 						</span>
-					) : isImageType(item.contentType) ? (
-						<div className="relative flex size-14 items-center justify-center rounded-xl bg-muted/40">
-							<img
-								src={getPreviewUrl(item.id)}
-								alt={item.name}
-								className="h-full w-full rounded-xl object-cover"
-							/>
-						</div>
 					) : (
 						(() => {
+							const size = parseObjectSize(item.objectSize)
+							if (isImageType(item.contentType) && size > 0 && size < 500 * 1024) {
+								return (
+									<div className="relative flex size-14 items-center justify-center rounded-xl bg-muted/40">
+										<img
+											src={getPreviewUrl(item.id)}
+											alt={item.name}
+											className="h-full w-full rounded-xl object-cover"
+										/>
+									</div>
+								)
+							}
 							const style = getFileStyle(item.name, item.contentType, "md")
 							return (
 								<span

@@ -109,7 +109,7 @@ function ComboboxContent({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        anchor={anchor}
+        anchor={anchor as any}
         className="isolate z-50"
       >
         <ComboboxPrimitive.Popup

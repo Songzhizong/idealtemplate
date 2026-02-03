@@ -1,23 +1,14 @@
 import { useRouterState } from "@tanstack/react-router"
 import * as React from "react"
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarGroup,
-	SidebarGroupContent,
-	SidebarHeader,
-	SidebarMenu,
-	SidebarProvider,
-} from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { useThemeStore } from "@/hooks/use-theme-store"
 import { useAuthStore } from "@/lib/auth-store"
 import { cn } from "@/lib/utils"
 import { ALL_NAV, PRIMARY_NAV } from "./nav-config"
+import { AppSidebar } from "./parts/app-sidebar"
 import { Header } from "./parts/header"
 import { NoAccess } from "./parts/no-access"
 import { SearchCommand } from "./parts/search-command"
-import { SidebarBrand } from "./parts/sidebar-brand"
-import { SidebarNavItem } from "./parts/sidebar-nav-item"
 
 export function BaseLayout({ children }: { children: React.ReactNode }) {
 	const sidebarWidth = useThemeStore((state) => state.layout.sidebarWidth)
@@ -25,10 +16,10 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 	const containerWidth = useThemeStore((state) => state.layout.containerWidth)
 	const pageAnimation = useThemeStore((state) => state.ui.pageAnimation)
 	const menuLayout = useThemeStore((state) => state.layout.menuLayout)
-
 	const pathname = useRouterState({
 		select: (state) => state.location.pathname,
 	})
+
 	const [searchOpen, setSearchOpen] = React.useState(false)
 
 	// 性能优化: 使用 Selector 仅订阅 hasPermission 函数
@@ -49,37 +40,19 @@ export function BaseLayout({ children }: { children: React.ReactNode }) {
 
 	return (
 		<SidebarProvider
-			className="bg-transparent "
-			sidebarWidth={sidebarWidth}
-			sidebarCollapsedWidth={sidebarCollapsedWidth}
+			className="bg-transparent"
+			style={
+				{
+					"--sidebar-width": `${sidebarWidth}px`,
+					"--sidebar-width-icon": `${sidebarCollapsedWidth}px`,
+				} as React.CSSProperties
+			}
 		>
-			<Sidebar
+			<AppSidebar
+				items={filteredPrimaryNav}
 				collapsible={menuLayout === "dual" ? "none" : "icon"}
-				className={cn(
-					"sticky top-0 h-screen transition-all duration-300 px-1",
-					"bg-sidebar border-sidebar-border text-sidebar-foreground",
-				)}
-			>
-				<SidebarHeader>
-					<SidebarBrand />
-				</SidebarHeader>
-				<SidebarContent className="space-y-6">
-					<SidebarGroup>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{filteredPrimaryNav.map((item) => (
-									<SidebarNavItem
-										key={item.title}
-										item={item}
-										isActive={pathname === item.to}
-										showLabel={menuLayout === "single"}
-									/>
-								))}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
-				</SidebarContent>
-			</Sidebar>
+				showLabel={menuLayout === "single"}
+			/>
 
 			<div className="flex h-screen flex-1 flex-col overflow-hidden">
 				<Header navItems={filteredAllNav} onSearchOpen={() => setSearchOpen(true)} />

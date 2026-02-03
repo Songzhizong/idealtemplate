@@ -1,4 +1,3 @@
-import { Collapsible as CollapsiblePrimitive } from "radix-ui"
 import { useQuery } from "@tanstack/react-query"
 import {
 	AlertTriangle,
@@ -13,6 +12,7 @@ import {
 	User,
 	XCircle,
 } from "lucide-react"
+import { Collapsible as CollapsiblePrimitive } from "radix-ui"
 import { type ReactNode, useCallback, useMemo, useState } from "react"
 import ReactDiffViewer, { DiffMethod } from "react-diff-viewer-continued"
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter"
@@ -21,16 +21,11 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs"
 import { toast } from "sonner"
 
 import { StatusBadge } from "@/components/common/status-badge"
+import { AppSheetContent } from "@/components/ui/app-sheet"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AppSheetContent } from "@/components/ui/app-sheet"
 import { Separator } from "@/components/ui/separator"
-import {
-	Sheet,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet"
+import { Sheet, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Api, fetchOperationLogDetail } from "@/features/core/operation-log/api/operation-log"
 import { OperationLogModifiedFields } from "@/features/core/operation-log/components/operation-log-modified-fields"
@@ -234,7 +229,7 @@ export function OperationLogDetailDrawer({
 								{data?.actionName || "操作详情"}
 							</span>
 							{data?.actionType ? (
-								<Badge variant={actionTypeConfig.variant}>{actionTypeConfig.label}</Badge>
+								<StatusBadge tone={actionTypeConfig.tone}>{actionTypeConfig.label}</StatusBadge>
 							) : null}
 							{data?.sensitive ? (
 								<StatusBadge tone="error" className="gap-1">

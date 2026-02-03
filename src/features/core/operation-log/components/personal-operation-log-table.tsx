@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { CircleAlert, CircleCheck, Eye, MapPin, Plus, Shield } from "lucide-react"
 import { parseAsInteger, parseAsString } from "nuqs"
 import { useCallback, useEffect, useMemo } from "react"
+import { StatusBadge } from "@/components/common/status-badge"
 import {
 	DataTable,
 	DataTableContainer,
@@ -9,8 +10,6 @@ import {
 	DataTablePagination,
 	TableProvider,
 } from "@/components/table"
-import { StatusBadge } from "@/components/common/status-badge"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DateRangePicker } from "@/components/ui/date-picker-rac"
 import {
@@ -107,17 +106,14 @@ export function PersonalOperationLogTable({
 									>
 										{log.actionName}
 									</button>
-									<Badge
-										variant={actionConfig.variant}
+									<StatusBadge
+										tone={actionConfig.tone}
 										className="text-[10px] font-normal whitespace-nowrap px-1.5 h-4"
 									>
 										{actionConfig.label}
-									</Badge>
+									</StatusBadge>
 									{log.sensitive ? (
-										<StatusBadge
-											tone="error"
-											className="gap-1 text-[10px] shrink-0 px-1.5 h-4"
-										>
+										<StatusBadge tone="error" className="gap-1 text-[10px] shrink-0 px-1.5 h-4">
 											<Shield className="size-2.5" />
 											敏感
 										</StatusBadge>
