@@ -9,6 +9,7 @@ import {
 	DataTablePagination,
 	TableProvider,
 } from "@/components/table"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DateRangePicker } from "@/components/ui/date-picker-rac"
@@ -113,13 +114,13 @@ export function PersonalOperationLogTable({
 										{actionConfig.label}
 									</Badge>
 									{log.sensitive ? (
-										<Badge
-											variant="error"
-											className="gap-1 text-[10px] shrink-0 px-1.5 h-4 bg-error/5 border-error/20 text-error"
+										<StatusBadge
+											tone="error"
+											className="gap-1 text-[10px] shrink-0 px-1.5 h-4"
 										>
 											<Shield className="size-2.5" />
 											敏感
-										</Badge>
+										</StatusBadge>
 									) : null}
 								</div>
 

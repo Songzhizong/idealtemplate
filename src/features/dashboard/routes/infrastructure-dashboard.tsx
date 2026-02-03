@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { motion } from "motion/react"
 import { PageContainer } from "@/components/common/page-container"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,16 +29,16 @@ export function InfrastructureDashboard() {
 
 	const updatedAt = format(parseISO(stats.updatedAt), "MM月dd日 HH:mm")
 
-	const getHealthVariant = (health: string): React.ComponentProps<typeof Badge>["variant"] => {
+	const getHealthTone = (health: string) => {
 		switch (health) {
 			case "healthy":
-				return "success-solid"
+				return "success"
 			case "warning":
-				return "warning-solid"
+				return "warning"
 			case "error":
-				return "error-solid"
+				return "error"
 			default:
-				return "secondary"
+				return "neutral"
 		}
 	}
 
@@ -60,28 +61,28 @@ export function InfrastructureDashboard() {
 			value: stats.totalUsers.toLocaleString(),
 			hint: "系统注册用户总数",
 			icon: Users,
-			accentClass: "text-info",
+			accentClass: "text-info bg-info-subtle border-info/20",
 		},
 		{
 			title: "活跃用户",
 			value: stats.activeUsers.toLocaleString(),
 			hint: "当前在线活跃用户",
 			icon: Activity,
-			accentClass: "text-success",
+			accentClass: "text-success bg-success-subtle border-success/20",
 		},
 		{
 			title: "文件总数",
 			value: stats.totalFiles.toLocaleString(),
 			hint: `存储空间使用 ${stats.storageUsed}`,
 			icon: HardDrive,
-			accentClass: "text-primary",
+			accentClass: "text-primary bg-primary/10 border-primary/20",
 		},
 		{
 			title: "运行任务",
 			value: `${stats.runningTasks}/${stats.totalTasks}`,
 			hint: "当前执行中的定时任务",
 			icon: Clock,
-			accentClass: "text-warning",
+			accentClass: "text-warning bg-warning-subtle border-warning/20",
 		},
 	]
 
@@ -102,9 +103,9 @@ export function InfrastructureDashboard() {
 									<Server className="h-3 w-3" />
 									基础设施平台
 								</span>
-								<Badge variant={getHealthVariant(stats.systemHealth)}>
+								<StatusBadge tone={getHealthTone(stats.systemHealth)} variant="solid">
 									{getHealthText(stats.systemHealth)}
-								</Badge>
+								</StatusBadge>
 							</div>
 							<h1 className="text-4xl font-semibold text-foreground sm:text-5xl">系统控制台</h1>
 							<p className="text-base text-muted-foreground sm:text-lg">

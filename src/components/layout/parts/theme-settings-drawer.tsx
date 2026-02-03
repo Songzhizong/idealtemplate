@@ -23,13 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select.tsx"
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet.tsx"
+import { AppSheetContent } from "@/components/ui/app-sheet"
+import { Sheet, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet.tsx"
 import { themePresets } from "@/config/theme-presets"
 import { useThemeStore } from "@/hooks/use-theme-store"
 import { cn } from "@/lib/utils.ts"
@@ -73,7 +68,7 @@ export function ThemeSettingsDrawer() {
 					<Palette className="size-4" />
 				</Button>
 			</SheetTrigger>
-			<SheetContent side="right" className="w-87.5 p-0 sm:w-100">
+			<AppSheetContent side="right" className="w-87.5 p-0 sm:w-100">
 				<div className="flex h-full flex-col">
 					<div className="flex items-center justify-between border-b border-border px-6 py-4">
 						<SheetTitle className="text-lg font-semibold">主题配置</SheetTitle>

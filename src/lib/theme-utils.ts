@@ -143,12 +143,20 @@ export function flattenColorPalette(palette: ColorPalette): Record<string, strin
 	// Extended semantic colors
 	vars["--success"] = hexToHSL(palette.status.success.default)
 	vars["--success-foreground"] = hexToHSL(palette.status.success.fg)
+	vars["--success-subtle"] = hexToHSL(palette.status.success.subtle)
+	vars["--success-on-subtle"] = hexToHSL(palette.status.success.onSubtle)
 	vars["--warning"] = hexToHSL(palette.status.warning.default)
 	vars["--warning-foreground"] = hexToHSL(palette.status.warning.fg)
+	vars["--warning-subtle"] = hexToHSL(palette.status.warning.subtle)
+	vars["--warning-on-subtle"] = hexToHSL(palette.status.warning.onSubtle)
 	vars["--error"] = hexToHSL(palette.status.error.default)
 	vars["--error-foreground"] = hexToHSL(palette.status.error.fg)
+	vars["--error-subtle"] = hexToHSL(palette.status.error.subtle)
+	vars["--error-on-subtle"] = hexToHSL(palette.status.error.onSubtle)
 	vars["--info"] = hexToHSL(palette.status.info.default)
 	vars["--info-foreground"] = hexToHSL(palette.status.info.fg)
+	vars["--info-subtle"] = hexToHSL(palette.status.info.subtle)
+	vars["--info-on-subtle"] = hexToHSL(palette.status.info.onSubtle)
 
 	// Table component colors
 	vars["--table-header-bg"] = hexToHSL(palette.component.table.headerBg)

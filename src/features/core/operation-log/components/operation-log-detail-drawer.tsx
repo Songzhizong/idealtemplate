@@ -20,12 +20,13 @@ import json from "react-syntax-highlighter/dist/esm/languages/hljs/json"
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs"
 import { toast } from "sonner"
 
+import { StatusBadge } from "@/components/common/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AppSheetContent } from "@/components/ui/app-sheet"
 import { Separator } from "@/components/ui/separator"
 import {
 	Sheet,
-	SheetContent,
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
@@ -211,7 +212,7 @@ export function OperationLogDetailDrawer({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="right" className="w-160 max-w-[95vw] p-0 sm:max-w-200">
+			<AppSheetContent side="right" className="w-160 max-w-[95vw] p-0 sm:max-w-200">
 				<SheetHeader className="sr-only">
 					<SheetTitle>操作日志详情</SheetTitle>
 					<SheetDescription>查看操作日志的详细技术上下文和变更内容</SheetDescription>
@@ -236,10 +237,10 @@ export function OperationLogDetailDrawer({
 								<Badge variant={actionTypeConfig.variant}>{actionTypeConfig.label}</Badge>
 							) : null}
 							{data?.sensitive ? (
-								<Badge variant="error" className="gap-1">
+								<StatusBadge tone="error" className="gap-1">
 									<Shield className="size-3" />
 									敏感
-								</Badge>
+								</StatusBadge>
 							) : null}
 						</div>
 						{data?.traceId ? (
@@ -338,7 +339,7 @@ export function OperationLogDetailDrawer({
 											</div>
 										</DetailItem>
 										<DetailItem label="平台">
-											<Badge variant="info">Web</Badge>
+											<StatusBadge tone="info">Web</StatusBadge>
 										</DetailItem>
 									</div>
 								</div>
@@ -481,7 +482,7 @@ export function OperationLogDetailDrawer({
 						)}
 					</div>
 				</div>
-			</SheetContent>
+			</AppSheetContent>
 		</Sheet>
 	)
 }

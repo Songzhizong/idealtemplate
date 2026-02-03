@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { SystemModule } from "../types/infrastructure"
@@ -8,18 +8,16 @@ interface SystemModuleCardProps {
 }
 
 export function SystemModuleCard({ module }: SystemModuleCardProps) {
-	const getStatusVariant = (
-		status: SystemModule["status"],
-	): React.ComponentProps<typeof Badge>["variant"] => {
+	const getStatusTone = (status: SystemModule["status"]) => {
 		switch (status) {
 			case "active":
 				return "success"
 			case "maintenance":
 				return "warning"
 			case "inactive":
-				return "secondary"
+				return "neutral"
 			default:
-				return "default"
+				return "neutral"
 		}
 	}
 
@@ -50,9 +48,9 @@ export function SystemModuleCard({ module }: SystemModuleCardProps) {
 						<CardTitle className="text-base font-semibold">{module.name}</CardTitle>
 						<CardDescription className="text-sm">{module.description}</CardDescription>
 					</div>
-					<Badge variant={getStatusVariant(module.status)} className="text-xs">
+					<StatusBadge tone={getStatusTone(module.status)} className="text-xs">
 						{getStatusText(module.status)}
-					</Badge>
+					</StatusBadge>
 				</div>
 			</CardHeader>
 			<CardContent className="pt-0">

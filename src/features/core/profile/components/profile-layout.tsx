@@ -118,7 +118,7 @@ export function ProfileLayout() {
 									菜单
 								</Button>
 							</SheetTrigger>
-							<SheetContent side="left" className="w-64">
+							<SheetContent side="left" data-side="left" className="w-64">
 								<nav className="mt-8 space-y-1">
 									<NavLinks />
 								</nav>

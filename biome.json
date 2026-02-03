@@ -9,7 +9,12 @@
 		"ignoreUnknown": false,
 		"includes": [
 			"src/app/**",
-			"src/components/**",
+			"src/components/auth/**",
+			"src/components/common/**",
+			"src/components/errors/**",
+			"src/components/layout/**",
+			"src/components/table/**",
+			"src/components/theme/**",
 			"src/features/**",
 			"src/hooks/**",
 			"src/lib/**",

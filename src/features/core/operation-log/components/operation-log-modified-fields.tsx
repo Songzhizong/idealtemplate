@@ -1,5 +1,6 @@
 import { Diff } from "lucide-react"
 import { useMemo } from "react"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Badge } from "@/components/ui/badge"
 import {
 	Table,
@@ -108,9 +109,9 @@ export function OperationLogModifiedFields({ modification }: OperationLogModifie
 										<div className="flex flex-col gap-1">
 											{field.additions?.length ? (
 												<div className="flex flex-wrap items-center gap-2">
-													<Badge variant="success" className="rounded-full">
+													<StatusBadge tone="success" className="rounded-full">
 														新增
-													</Badge>
+													</StatusBadge>
 													{field.additions.map((item) => (
 														<Badge key={item.value} variant="secondary" className="rounded-full">
 															{normalizeDisplay(item.displayValue || item.value)}
@@ -120,9 +121,9 @@ export function OperationLogModifiedFields({ modification }: OperationLogModifie
 											) : null}
 											{field.deletions?.length ? (
 												<div className="flex flex-wrap items-center gap-2">
-													<Badge variant="error" className="rounded-full">
+													<StatusBadge tone="error" className="rounded-full">
 														删除
-													</Badge>
+													</StatusBadge>
 													{field.deletions.map((item) => (
 														<Badge key={item.value} variant="secondary" className="rounded-full">
 															{normalizeDisplay(item.displayValue || item.value)}
