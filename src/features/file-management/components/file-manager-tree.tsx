@@ -40,7 +40,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { RenameInput } from "./rename-input"
 import type { FileCatalog } from "../types"
 
 export type TreeAction =
@@ -63,9 +62,6 @@ interface FileManagerTreeProps {
 	level?: number
 	collapseVersion?: number
 	locateTrigger?: number | undefined
-	renamingId?: string | null | undefined
-	onConfirmRename?: ((id: string, name: string, kind: "file" | "folder") => Promise<void>) | undefined
-	onCancelRename?: (() => void) | undefined
 }
 
 function getFileIdsFromData(data: DataTransfer) {
@@ -141,9 +137,6 @@ const TreeNode = memo(function TreeNode({
 	level,
 	collapseVersion,
 	locateTrigger,
-	renamingId,
-	onConfirmRename,
-	onCancelRename,
 }: {
 	node: FileCatalog
 	selectedId: string | null
@@ -155,16 +148,12 @@ const TreeNode = memo(function TreeNode({
 	level: number
 	collapseVersion: number | undefined
 	locateTrigger?: number | undefined
-	renamingId?: string | null | undefined
-	onConfirmRename?: ((id: string, name: string, kind: "file" | "folder") => Promise<void>) | undefined
-	onCancelRename?: (() => void) | undefined
 }) {
 	const [isExpanded, setIsExpanded] = useState(false)
 	const [isDragOver, setIsDragOver] = useState(false)
 	const hasChildren = Boolean(node.children && node.children.length > 0)
 	const isSelected = selectedId === node.id
 	const isDisabled = disabledIds?.includes(node.id)
-	const isRenaming = renamingId === node.id
 
 	useEffect(() => {
 		if (pathIds?.has(node.id)) {
@@ -241,41 +230,8 @@ const TreeNode = memo(function TreeNode({
 		<div>
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
-					{isRenaming ? (
-						<div
-							className={cn(
-								"group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors relative",
-								isSelected ? "bg-primary/10 text-primary" : "text-foreground",
-							)}
-							style={{ paddingLeft: `${level * 12 + 8}px` }}
-						>
-							<span
-								className={cn(
-									"rounded p-0.5 text-muted-foreground transition",
-									!hasChildren && "invisible",
-								)}
-							>
-								{isExpanded ? (
-									<ChevronDown className="size-3.5 opacity-70" />
-								) : (
-									<ChevronRight className="size-3.5 opacity-70" />
-								)}
-							</span>
-							{isExpanded ? (
-								<FolderOpen className="size-4 text-primary" />
-							) : (
-								<Folder className="size-4 text-primary" />
-							)}
-							<RenameInput
-								defaultValue={node.name}
-								className="flex-1 min-w-0"
-								onSubmit={(val) => onConfirmRename?.(node.id, val, "folder") ?? Promise.resolve()}
-								onCancel={() => onCancelRename?.()}
-							/>
-						</div>
-					) : (
-						<button
-							type="button"
+					<button
+						type="button"
 						className={cn(
 							"group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
 							isSelected ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50",
@@ -362,7 +318,6 @@ const TreeNode = memo(function TreeNode({
 							</DropdownMenu>
 						</span>
 					</button>
-					)}
 				</ContextMenuTrigger>
 				<TreeMenuContent node={node} onAction={onAction} />
 			</ContextMenu>
@@ -389,9 +344,6 @@ const TreeNode = memo(function TreeNode({
 								level={level + 1}
 								collapseVersion={collapseVersion ?? undefined}
 								locateTrigger={locateTrigger}
-								renamingId={renamingId}
-								onConfirmRename={onConfirmRename}
-								onCancelRename={onCancelRename}
 							/>
 						))}
 					</motion.div>
@@ -412,9 +364,6 @@ export const FileManagerTree = memo(function FileManagerTree({
 	level = 0,
 	collapseVersion,
 	locateTrigger,
-	renamingId,
-	onConfirmRename,
-	onCancelRename,
 }: FileManagerTreeProps) {
 	return (
 		<div className="py-1">
@@ -432,9 +381,6 @@ export const FileManagerTree = memo(function FileManagerTree({
 						level={level}
 						collapseVersion={collapseVersion ?? undefined}
 						locateTrigger={locateTrigger}
-						renamingId={renamingId}
-						onConfirmRename={onConfirmRename}
-						onCancelRename={onCancelRename}
 					/>
 				))}
 			</div>

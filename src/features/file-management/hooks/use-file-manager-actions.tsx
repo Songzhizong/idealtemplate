@@ -66,9 +66,6 @@ export function useFileManagerActions({
 	const [moveDialogOpen, setMoveDialogOpen] = useState(false)
 	const [moveTargets, setMoveTargets] = useState<Array<{ id: string; kind: "file" | "folder" }>>([])
 	const [targetCatalogId, setTargetCatalogId] = useState<string | null>(null)
-	const [renamingState, setRenamingState] = useState<{ id: string; context: "tree" | "list" } | null>(
-		null,
-	)
 	const [dialogMode, setDialogMode] = useState<"create" | "rename" | null>(null)
 	const [dialogTarget, setDialogTarget] = useState<FileManagerItem | FileCatalog | null>(null)
 	const [confirmAction, setConfirmAction] = useState<{
@@ -412,7 +409,7 @@ export function useFileManagerActions({
 			node: FileCatalog,
 		) => {
 			if (action === "create") handleOpenFolderDialog("create", node)
-			if (action === "rename") setRenamingState({ id: node.id, context: "tree" })
+			if (action === "rename") handleOpenFolderDialog("rename", node)
 			if (action === "move") {
 				handleMoveTargets([{ id: node.id, kind: "folder" }])
 			}
@@ -505,24 +502,9 @@ export function useFileManagerActions({
 
 	const handleRenameItem = useCallback(
 		(item: FileManagerItem) => {
-			setRenamingState({ id: item.id, context: "list" })
+			handleOpenFolderDialog("rename", item)
 		},
-		[],
-	)
-
-	const handleConfirmRename = useCallback(
-		async (id: string, newName: string, kind: "file" | "folder") => {
-			if (kind === "folder") {
-				await fetchRenameCatalog(bizType, id, newName)
-			} else {
-				await fetchRenameFile(bizType, id, newName)
-			}
-			void refetchCatalogs()
-			void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-			setRenamingState(null)
-			toast.success("已重命名")
-		},
-		[bizType, queryClient, refetchCatalogs],
+		[handleOpenFolderDialog],
 	)
 
 	const handleMoveItem = useCallback(
@@ -590,13 +572,6 @@ export function useFileManagerActions({
 		handleDownloadSelected,
 		handleMoveSelected,
 		handleRenameItem,
-		handleConfirmRename,
-		renamingId: renamingState?.id ?? null,
-		renamingContext: renamingState?.context ?? null,
-		setRenamingId: (id: string | null) => {
-			if (!id) setRenamingState(null)
-			else setRenamingState({ id, context: "list" }) // Default fallback or explicit context needed
-		},
 		handleMoveItem,
 		handlePreviewUrl,
 

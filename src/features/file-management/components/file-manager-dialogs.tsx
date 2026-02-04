@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
 import {
@@ -39,12 +40,56 @@ interface FolderDialogProps {
 	form: UseFormReturn<FolderFormValues>
 	onSubmit: (values: FolderFormValues) => void
 	onOpenChange: (open: boolean) => void
+	target?: FileCatalog | { kind: "file" | "folder"; name: string } | null
 }
 
-export function FolderDialog({ open, mode, form, onSubmit, onOpenChange }: FolderDialogProps) {
+export function FolderDialog({
+	open,
+	mode,
+	form,
+	onSubmit,
+	onOpenChange,
+	target,
+}: FolderDialogProps) {
+	const inputRef = useRef<HTMLInputElement>(null)
+
+	useLayoutEffect(() => {
+		if (!open || mode !== "rename" || !inputRef.current) return
+		const name = target?.name ?? ""
+		const focusAndSelect = () => {
+			const input = inputRef.current
+			if (!input) return
+			input.focus()
+			if (target && "kind" in target && target.kind === "file") {
+				const lastDotIndex = name.lastIndexOf(".")
+				if (lastDotIndex > 0) {
+					input.setSelectionRange(0, lastDotIndex)
+					return
+				}
+			}
+			input.select()
+		}
+		requestAnimationFrame(() => {
+			focusAndSelect()
+			setTimeout(focusAndSelect, 0)
+			setTimeout(focusAndSelect, 50)
+		})
+	}, [open, mode, target])
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent
+				className="sm:max-w-md"
+				onOpenAutoFocus={(event) => {
+					if (mode !== "rename") return
+					event.preventDefault()
+					requestAnimationFrame(() => {
+						const input = inputRef.current
+						if (!input) return
+						input.focus()
+					})
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle>{mode === "create" ? "新建文件夹" : "重命名"}</DialogTitle>
 				</DialogHeader>
@@ -57,7 +102,28 @@ export function FolderDialog({ open, mode, form, onSubmit, onOpenChange }: Folde
 								<FormItem>
 									<FormLabel>名称</FormLabel>
 									<FormControl>
-										<Input placeholder="请输入名称" {...field} />
+										<Input
+											ref={inputRef}
+											placeholder="请输入名称"
+											onFocus={(event) => {
+												if (mode !== "rename") return
+												const currentTarget = target
+												const currentName = currentTarget?.name ?? ""
+												if (
+													currentTarget &&
+													"kind" in currentTarget &&
+													currentTarget.kind === "file"
+												) {
+													const lastDotIndex = currentName.lastIndexOf(".")
+													if (lastDotIndex > 0) {
+														event.currentTarget.setSelectionRange(0, lastDotIndex)
+														return
+													}
+												}
+												event.currentTarget.select()
+											}}
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>

@@ -1,7 +1,8 @@
 import { Loader2 } from "lucide-react"
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
 interface RenameInputProps {
@@ -9,6 +10,7 @@ interface RenameInputProps {
 	className?: string
 	onSubmit: (value: string) => Promise<void>
 	onCancel: () => void
+	multiline?: boolean
 }
 
 export function RenameInput({
@@ -16,28 +18,48 @@ export function RenameInput({
 	className,
 	onSubmit,
 	onCancel,
+	multiline = false,
 }: RenameInputProps) {
 	const [value, setValue] = useState(defaultValue)
 	const [error, setError] = useState<string | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
-	const inputRef = useRef<HTMLInputElement>(null)
+	const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
+	const hasFocusedRef = useRef(false)
+	const mountedAtRef = useRef(Date.now())
+	const hasEditedRef = useRef(false)
+
+	const adjustTextareaHeight = () => {
+		const el = inputRef.current
+		if (!el || !(el instanceof HTMLTextAreaElement)) return
+		el.style.height = "auto"
+		el.style.height = `${el.scrollHeight}px`
+	}
 
 	useEffect(() => {
-		// Use setTimeout to ensure focus works after ContextMenu closes (which restores focus to trigger)
-		const timer = setTimeout(() => {
-			if (inputRef.current) {
-				inputRef.current.focus()
-				// Select filename without extension
-				const lastDotIndex = defaultValue.lastIndexOf(".")
-				if (lastDotIndex > 0) {
-					inputRef.current.setSelectionRange(0, lastDotIndex)
-				} else {
-					inputRef.current.select()
-				}
-			}
-		}, 0)
-		return () => clearTimeout(timer)
+		mountedAtRef.current = Date.now()
+		hasEditedRef.current = false
 	}, [defaultValue])
+
+	useLayoutEffect(() => {
+		// Use rAF to ensure focus runs after ContextMenu closes (which restores focus to trigger)
+		let rafId = requestAnimationFrame(() => {
+			if (!inputRef.current) return
+			inputRef.current.focus()
+			hasFocusedRef.current = true
+			const lastDotIndex = defaultValue.lastIndexOf(".")
+			if (lastDotIndex > 0) {
+				inputRef.current.setSelectionRange(0, lastDotIndex)
+			} else {
+				inputRef.current.select()
+			}
+		})
+		return () => cancelAnimationFrame(rafId)
+	}, [defaultValue])
+
+	useLayoutEffect(() => {
+		if (!multiline) return
+		adjustTextareaHeight()
+	}, [multiline, value])
 
 	// Scroll into view if needed
 	useEffect(() => {
@@ -52,6 +74,7 @@ export function RenameInput({
 
 	const validate = (val: string): string | null => {
 		if (!val.trim()) return "名称不能为空"
+		if (/[\r\n]/.test(val)) return "名称不能包含换行"
 		if (/[\/\\:*?"<>|]/.test(val)) {
 			return "名称不能包含字符: \\ / : * ? \" < > |"
 		}
@@ -97,6 +120,14 @@ export function RenameInput({
 	}
 
 	const handleBlur = () => {
+		if (!hasFocusedRef.current) return
+		if (
+			!hasEditedRef.current &&
+			value.trim() === defaultValue &&
+			Date.now() - mountedAtRef.current < 200
+		) {
+			return
+		}
 		// If we are loading, don't do anything on blur?
 		// Or if we are loading, we can't really cancel or submit again.
 		if (isLoading) return
@@ -106,25 +137,54 @@ export function RenameInput({
 	return (
 		<div className={cn("relative min-w-[200px]", className)}>
 			<div className="relative">
-				<Input
-					ref={inputRef}
-					value={value}
-					onChange={(e) => {
-						setValue(e.target.value)
-						if (error) setError(null)
-					}}
-					onKeyDown={handleKeyDown}
-					onBlur={handleBlur}
-					disabled={isLoading}
-					className={cn(
-						"h-8 pr-8 transition-all duration-200",
-						error && "border-destructive focus-visible:ring-destructive",
-						// Dynamic width adjustment could be tricky with just CSS,
-						// but standard Input is usually width: 100%.
-						// The parent container controls the width.
-					)}
-					onClick={(e) => e.stopPropagation()}
-				/>
+				{multiline ? (
+					<Textarea
+						ref={inputRef}
+						autoFocus
+						rows={1}
+						value={value}
+						onChange={(e) => {
+							setValue(e.target.value)
+							hasEditedRef.current = true
+							if (error) setError(null)
+						}}
+						onFocus={() => {
+							hasFocusedRef.current = true
+						}}
+						onKeyDown={handleKeyDown}
+						onBlur={handleBlur}
+						disabled={isLoading}
+						className={cn(
+							"min-h-10 resize-none overflow-hidden py-1.5 pr-8 leading-5",
+							"transition-all duration-200",
+							error && "border-destructive focus-visible:ring-destructive",
+						)}
+						onClick={(e) => e.stopPropagation()}
+					/>
+				) : (
+					<Input
+						ref={inputRef}
+						autoFocus
+						value={value}
+						onChange={(e) => {
+							setValue(e.target.value)
+							hasEditedRef.current = true
+							if (error) setError(null)
+						}}
+						onFocus={() => {
+							hasFocusedRef.current = true
+						}}
+						onKeyDown={handleKeyDown}
+						onBlur={handleBlur}
+						disabled={isLoading}
+						className={cn(
+							"h-8 pr-8",
+							"transition-all duration-200",
+							error && "border-destructive focus-visible:ring-destructive",
+						)}
+						onClick={(e) => e.stopPropagation()}
+					/>
+				)}
 				{isLoading && (
 					<div className="absolute right-2 top-1/2 -translate-y-1/2">
 						<Loader2 className="size-4 animate-spin text-muted-foreground" />

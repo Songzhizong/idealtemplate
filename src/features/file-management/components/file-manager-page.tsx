@@ -381,9 +381,6 @@ export function FileManagerPage() {
 							allowLocate={Boolean(
 								selectedCatalogId || (selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
 							)}
-							renamingId={actions.renamingContext === "tree" ? actions.renamingId : null}
-							onCancelRename={() => actions.setRenamingId(null)}
-							onConfirmRename={actions.handleConfirmRename}
 						/>
 					</Panel>
 					<PanelResizeHandle className="w-1 cursor-col-resize bg-transparent hover:bg-primary/10" />
@@ -442,9 +439,6 @@ export function FileManagerPage() {
 									hasNextPage={fileQuery.hasNextPage}
 									onLoadMore={handleLoadMore}
 									getPreviewUrl={actions.handlePreviewUrl}
-									renamingId={actions.renamingContext === "list" ? actions.renamingId : null}
-									onCancelRename={() => actions.setRenamingId(null)}
-									onConfirmRename={actions.handleConfirmRename}
 								/>
 							</div>
 
@@ -497,6 +491,7 @@ export function FileManagerPage() {
 				mode={actions.dialogMode}
 				form={actions.folderForm}
 				onSubmit={actions.handleSubmitFolder}
+				target={actions.dialogTarget ?? null}
 				onOpenChange={(open) => {
 					if (!open) {
 						actions.setDialogMode(null)

@@ -29,9 +29,6 @@ interface FileSidebarProps {
 	onLocate?: () => void
 	locateTrigger?: number
 	allowLocate?: boolean
-	renamingId?: string | null
-	onConfirmRename?: (id: string, name: string, kind: "file" | "folder") => Promise<void>
-	onCancelRename?: () => void
 }
 
 export const FileSidebar = memo(function FileSidebar({
@@ -48,9 +45,6 @@ export const FileSidebar = memo(function FileSidebar({
 	onLocate,
 	locateTrigger,
 	allowLocate = false,
-	renamingId,
-	onConfirmRename,
-	onCancelRename,
 }: FileSidebarProps) {
 	const [collapseVersion, setCollapseVersion] = useState(0)
 	const usagePercent = storageInfo ? (storageInfo.used / storageInfo.total) * 100 : 0
@@ -145,9 +139,6 @@ export const FileSidebar = memo(function FileSidebar({
 							{...(onDropFilesToCatalog ? { onDropFiles: onDropFilesToCatalog } : {})}
 							{...(onTreeAction ? { onAction: onTreeAction } : {})}
 							locateTrigger={locateTrigger}
-							renamingId={renamingId}
-							onConfirmRename={onConfirmRename}
-							onCancelRename={onCancelRename}
 						/>
 					)}
 				</div>

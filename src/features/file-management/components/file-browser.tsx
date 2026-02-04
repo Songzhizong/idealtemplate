@@ -21,7 +21,6 @@ import { FileBrowserGrid } from "./file-browser-grid"
 import { FileBrowserItemMenuContent } from "./file-browser-item-menu"
 import { FileBrowserTable } from "./file-browser-table"
 import { buildDragPayload } from "./file-browser-utils"
-import { RenameInput } from "./rename-input"
 
 interface FileBrowserProps extends FileBrowserItemActionHandlers {
 	items: FileManagerItem[]
@@ -39,9 +38,6 @@ interface FileBrowserProps extends FileBrowserItemActionHandlers {
 	onLoadMore?: () => void
 	onMoveItemToCatalog: (targetId: string, ids: string[]) => void
 	getPreviewUrl: (id: string) => string
-	renamingId?: string | null
-	onConfirmRename?: (id: string, name: string, kind: "file" | "folder") => Promise<void>
-	onCancelRename?: () => void
 }
 
 export const FileBrowser = memo(function FileBrowser({
@@ -68,9 +64,6 @@ export const FileBrowser = memo(function FileBrowser({
 	hasNextPage,
 	onLoadMore,
 	getPreviewUrl,
-	renamingId,
-	onConfirmRename,
-	onCancelRename,
 }: FileBrowserProps) {
 	const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
 	const selectedIdsRef = useRef(selectedIds)
@@ -400,16 +393,6 @@ export const FileBrowser = memo(function FileBrowser({
 				accessorKey: "name",
 				cell: ({ row }) => {
 					const item = row.original
-					if (renamingId === item.id) {
-						return (
-							<RenameInput
-								defaultValue={item.name}
-								className="w-full max-w-xs"
-								onSubmit={(val) => onConfirmRename?.(item.id, val, item.kind) ?? Promise.resolve()}
-								onCancel={() => onCancelRename?.()}
-							/>
-						)
-					}
 					return (
 						<div className="min-w-0">
 							<p className="truncate text-sm font-medium">{item.name}</p>
@@ -456,7 +439,7 @@ export const FileBrowser = memo(function FileBrowser({
 				},
 			},
 		],
-		[actionProps, renamingId, onConfirmRename, onCancelRename],
+		[actionProps],
 	)
 
 	const table = useReactTable({
