@@ -36,7 +36,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm run build-mock
+        run: pnpm run build-mock:pages
         env:
           VITE_BASE_URL: /idealtemplate/
 
