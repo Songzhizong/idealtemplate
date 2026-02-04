@@ -5,13 +5,9 @@ import { handlers } from "@/mocks/handlers"
 export const worker = setupWorker(...handlers)
 
 export async function enableMocking() {
-	// 在开发模式下需要显式启用 VITE_ENABLE_MOCK
-	// 在生产模式下也可以通过 VITE_ENABLE_MOCK=true 启用（用于 GitHub Pages 等静态部署）
-	if (import.meta.env.DEV && env.VITE_ENABLE_MOCK !== "true") {
-		return
-	}
-
-	if (!import.meta.env.DEV && env.VITE_ENABLE_MOCK !== "true") {
+	// 只在 VITE_ENABLE_MOCK=true 时启用 MSW
+	// 用于开发环境或静态部署（如 GitHub Pages）
+	if (env.VITE_ENABLE_MOCK !== "true") {
 		return
 	}
 
