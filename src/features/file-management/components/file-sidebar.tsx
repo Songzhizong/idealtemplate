@@ -1,10 +1,10 @@
 "use client"
 
-import { Files, FoldVertical, FolderTree, HardDrive, LocateFixed, Trash2 } from "lucide-react"
+import { Files, FolderTree, FoldVertical, HardDrive, LocateFixed, Trash2 } from "lucide-react"
 import { memo, useCallback, useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type { FileCatalog } from "../types"

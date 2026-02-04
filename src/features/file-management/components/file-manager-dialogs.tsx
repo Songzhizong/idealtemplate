@@ -1,3 +1,4 @@
+import type React from "react"
 import { useLayoutEffect, useRef } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
@@ -98,36 +99,42 @@ export function FolderDialog({
 						<FormField
 							control={form.control}
 							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>名称</FormLabel>
-									<FormControl>
-										<Input
-											ref={inputRef}
-											placeholder="请输入名称"
-											onFocus={(event) => {
-												if (mode !== "rename") return
-												const currentTarget = target
-												const currentName = currentTarget?.name ?? ""
-												if (
-													currentTarget &&
-													"kind" in currentTarget &&
-													currentTarget.kind === "file"
-												) {
-													const lastDotIndex = currentName.lastIndexOf(".")
-													if (lastDotIndex > 0) {
-														event.currentTarget.setSelectionRange(0, lastDotIndex)
-														return
+							render={({ field }) => {
+								const { ref: fieldRef, ...fieldProps } = field
+								return (
+									<FormItem>
+										<FormLabel>名称</FormLabel>
+										<FormControl>
+											<Input
+												ref={(e) => {
+													field.ref(e)
+													inputRef.current = e
+												}}
+												placeholder="请输入名称"
+												onFocus={(event) => {
+													if (mode !== "rename") return
+													const currentTarget = target
+													const currentName = currentTarget?.name ?? ""
+													if (
+														currentTarget &&
+														"kind" in currentTarget &&
+														currentTarget.kind === "file"
+													) {
+														const lastDotIndex = currentName.lastIndexOf(".")
+														if (lastDotIndex > 0) {
+															event.currentTarget.setSelectionRange(0, lastDotIndex)
+															return
+														}
 													}
-												}
-												event.currentTarget.select()
-											}}
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
+													event.currentTarget.select()
+												}}
+												{...fieldProps}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)
+							}}
 						/>
 						<DialogFooter className="gap-2">
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

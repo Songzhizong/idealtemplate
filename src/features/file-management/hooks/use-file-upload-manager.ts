@@ -24,11 +24,7 @@ interface UploadOptions {
 
 type UploadControllerMap = Map<string, AbortController>
 
-function createTask(
-	file: File,
-	catalogId: string | null,
-	targetPath: string | null,
-): UploadTask {
+function createTask(file: File, catalogId: string | null, targetPath: string | null): UploadTask {
 	const now = Date.now()
 	return {
 		id: `upload-${now}-${Math.random().toString(36).slice(2, 8)}`,
@@ -240,6 +236,7 @@ export function useFileUploadManager(options: UploadOptions) {
 		}
 	}, [startUpload])
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Trigger processQueue on uploadTasks change
 	useEffect(() => {
 		processQueue()
 	}, [processQueue, uploadTasks])
@@ -284,7 +281,7 @@ export function useFileUploadManager(options: UploadOptions) {
 	)
 
 	const resumeUpload = useCallback(
-		async (taskId: string, file: File, _uploadId?: string, targetCatalogId?: string | null) => {
+		async (taskId: string, file: File, _uploadId?: string, _targetCatalogId?: string | null) => {
 			const task = useUploadStore.getState().uploadTasks.find((t) => t.id === taskId)
 			if (!task) return
 			fileMapRef.current.set(taskId, file)
@@ -325,11 +322,7 @@ export function useFileUploadManager(options: UploadOptions) {
 		const state = useUploadStore.getState()
 		let missingFileCount = 0
 		state.uploadTasks.forEach((task) => {
-			if (
-				task.status !== "paused" &&
-				task.status !== "failed" &&
-				task.status !== "interrupted"
-			) {
+			if (task.status !== "paused" && task.status !== "failed" && task.status !== "interrupted") {
 				return
 			}
 			const file = fileMapRef.current.get(task.id)
@@ -356,7 +349,9 @@ export function useFileUploadManager(options: UploadOptions) {
 			}
 			fileMapRef.current.delete(task.id)
 		}
-		state.uploadTasks.forEach((task) => state.removeUploadTask(task.id))
+		state.uploadTasks.forEach((task) => {
+			state.removeUploadTask(task.id)
+		})
 	}, [])
 
 	return {

@@ -5,17 +5,17 @@ import {
 	BASE_PATH,
 	BatchMoveSchema,
 	CompleteMultipartSchema,
-	IdListSchema,
-	InitMultipartUploadSchema,
-	ROOT_CATALOG_ID,
-	RenameFileSchema,
 	ensureSeeded,
 	getFileContent,
 	getFilesByBizType,
+	IdListSchema,
+	InitMultipartUploadSchema,
 	makeId,
 	nowIso,
 	paginate,
 	pickRootOrAll,
+	RenameFileSchema,
+	ROOT_CATALOG_ID,
 	recoverCatalogChain,
 	store,
 } from "./fss.mock.store"
@@ -92,22 +92,25 @@ export const fssFileHandlers = [
 		return HttpResponse.json(record)
 	}),
 
-	http.post(`${BASE_PATH}/files/:bizType/:catalogId/multipart/init`, async ({ request, params }) => {
-		const bizType = z.string().parse(params.bizType)
-		const catalogId = z.string().parse(params.catalogId)
-		ensureSeeded(bizType)
-		const payload = InitMultipartUploadSchema.parse(await request.json())
-		const uploadId = makeId("upload")
-		store.uploads.set(uploadId, {
-			bizType,
-			catalogId: catalogId.length > 0 ? catalogId : ROOT_CATALOG_ID,
-			originalName: payload.originalName,
-			contentType: payload.contentType,
-			parts: new Map(),
-		})
-		await delay(200)
-		return HttpResponse.json({ uploadId })
-	}),
+	http.post(
+		`${BASE_PATH}/files/:bizType/:catalogId/multipart/init`,
+		async ({ request, params }) => {
+			const bizType = z.string().parse(params.bizType)
+			const catalogId = z.string().parse(params.catalogId)
+			ensureSeeded(bizType)
+			const payload = InitMultipartUploadSchema.parse(await request.json())
+			const uploadId = makeId("upload")
+			store.uploads.set(uploadId, {
+				bizType,
+				catalogId: catalogId.length > 0 ? catalogId : ROOT_CATALOG_ID,
+				originalName: payload.originalName,
+				contentType: payload.contentType,
+				parts: new Map(),
+			})
+			await delay(200)
+			return HttpResponse.json({ uploadId })
+		},
+	),
 
 	http.put(`${BASE_PATH}/files/multipart/:uploadId/:partNumber`, async ({ request, params }) => {
 		const uploadId = z.string().parse(params.uploadId)

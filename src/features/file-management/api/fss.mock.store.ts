@@ -100,8 +100,22 @@ export function ensureSeeded(bizType: string) {
 		{ id: designId, parentId: null, name: "Design Assets", public: true, deleted: false, bizType },
 		{ id: contractId, parentId: null, name: "Contracts", public: false, deleted: false, bizType },
 		{ id: marketingId, parentId: null, name: "Marketing", public: true, deleted: false, bizType },
-		{ id: brandId, parentId: marketingId, name: "Brand Kit", public: true, deleted: false, bizType },
-		{ id: archiveId, parentId: contractId, name: "Archive", public: false, deleted: false, bizType },
+		{
+			id: brandId,
+			parentId: marketingId,
+			name: "Brand Kit",
+			public: true,
+			deleted: false,
+			bizType,
+		},
+		{
+			id: archiveId,
+			parentId: contractId,
+			name: "Archive",
+			public: false,
+			deleted: false,
+			bizType,
+		},
 		{
 			id: recycleCatalogId,
 			parentId: null,
@@ -331,7 +345,11 @@ export function getFileContent(file: FileState) {
 	return { contentType: "text/plain", body: text }
 }
 
-export function pickRootOrAll(files: FileState[], catalogId: string | null, filename: string | null) {
+export function pickRootOrAll(
+	files: FileState[],
+	catalogId: string | null,
+	filename: string | null,
+) {
 	if (catalogId) return files.filter((file) => file.catalogId === catalogId)
 	if (filename) return files
 	return files.filter((file) => file.catalogId === ROOT_CATALOG_ID)

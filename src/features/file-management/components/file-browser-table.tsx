@@ -75,10 +75,10 @@ const TableRowItem = memo(function TableRowItem({
 				onItemContextMenu(item)
 			}}
 			draggable={!isRecycleBin}
-			onDragStart={(event: any) => onDragStart(event, item)}
-			onDragOver={(event: any) => onDragOverItem(event, item)}
+			onDragStart={(event) => onDragStart(event as unknown as DragEvent, item)}
+			onDragOver={(event) => onDragOverItem(event as unknown as DragEvent, item)}
 			onDragLeave={onDragLeaveItem}
-			onDrop={(event: any) => onDropOnItem(event, item)}
+			onDrop={(event) => onDropOnItem(event as unknown as DragEvent, item)}
 		>
 			{row.getVisibleCells().map((cell, idx) => {
 				const meta = cell.column.columnDef.meta as { className?: string } | undefined

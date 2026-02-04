@@ -158,12 +158,8 @@ function UploadTaskItem({
 									: "border-muted-foreground/60",
 						)}
 					/>
-					{task.status === "failed" && (
-						<fileIconMeta.Icon className="size-4 text-destructive" />
-					)}
-					{task.status === "completed" && (
-						<fileIconMeta.Icon className="size-4 text-primary" />
-					)}
+					{task.status === "failed" && <fileIconMeta.Icon className="size-4 text-destructive" />}
+					{task.status === "completed" && <fileIconMeta.Icon className="size-4 text-primary" />}
 					{task.status !== "failed" && task.status !== "completed" && (
 						<fileIconMeta.Icon
 							className={cn(
@@ -183,9 +179,7 @@ function UploadTaskItem({
 					<p className="truncate text-sm font-medium" title={task.fileName}>
 						{task.fileName}
 					</p>
-					<p className="text-[11px] text-muted-foreground">
-						上传至：{task.targetPath ?? "/"}
-					</p>
+					<p className="text-[11px] text-muted-foreground">上传至：{task.targetPath ?? "/"}</p>
 					<p className="text-xs text-muted-foreground">
 						{task.status === "uploading" && (
 							<>
@@ -314,8 +308,7 @@ export function FileUploadWidget({
 	const failedUploads = uploadTasks.filter((task) => task.status === "failed")
 	const canPauseAll = activeUploads.length > 0
 	const canResumeAll = uploadTasks.some(
-		(task) =>
-			task.status === "paused" || task.status === "failed" || task.status === "interrupted",
+		(task) => task.status === "paused" || task.status === "failed" || task.status === "interrupted",
 	)
 	const canClearCompleted = completedUploads.length > 0
 	const canCancelAll = activeUploads.length > 0
@@ -436,7 +429,9 @@ export function FileUploadWidget({
 					</div>
 				</div>
 
-				{activeUploads.length > 0 && <Progress value={totalProgress} className="h-px rounded-none" />}
+				{activeUploads.length > 0 && (
+					<Progress value={totalProgress} className="h-px rounded-none" />
+				)}
 
 				{isUploadWidgetExpanded && (
 					<div>
@@ -449,9 +444,7 @@ export function FileUploadWidget({
 								>
 									<TabsList className="grid w-full grid-cols-3">
 										<TabsTrigger value="all">全部 {uploadTasks.length}</TabsTrigger>
-										<TabsTrigger value="active">
-											上传中 {activeUploads.length}
-										</TabsTrigger>
+										<TabsTrigger value="active">上传中 {activeUploads.length}</TabsTrigger>
 										<TabsTrigger value="error">
 											失败/中断 {failedUploads.length + interruptedUploads.length}
 										</TabsTrigger>

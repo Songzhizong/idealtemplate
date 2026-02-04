@@ -2,9 +2,14 @@
 
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState, useRef } from "react"
-import { type ImperativePanelHandle, Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
+import {
+	type ImperativePanelHandle,
+	Panel,
+	PanelGroup,
+	PanelResizeHandle,
+} from "react-resizable-panels"
 
 import { useThemeStore } from "@/hooks/use-theme-store"
 import { FILE_MANAGER_BIZ_TYPE } from "../config"
@@ -94,9 +99,10 @@ export function FileManagerPage() {
 		},
 	})
 	const uploadTasks = useUploadStore((state) => state.uploadTasks)
-	const [pendingLocate, setPendingLocate] = useState<{ fileId: string; catalogId: string | null } | null>(
-		null,
-	)
+	const [pendingLocate, setPendingLocate] = useState<{
+		fileId: string
+		catalogId: string | null
+	} | null>(null)
 	const getCatalogPath = useCallback(
 		(catalogId: string | null) => {
 			if (!catalogId) return "/"
@@ -109,7 +115,6 @@ export function FileManagerPage() {
 
 	// 5. Upload UI Logic
 	const {
-		pendingUploadFiles,
 		setPendingUploadFiles,
 		uploadDialogOpen,
 		setUploadDialogOpen,
@@ -168,7 +173,11 @@ export function FileManagerPage() {
 		if (!targetCatalogId && selectedItems.length === 1 && selectedItems[0]?.kind === "file") {
 			const item = selectedItems[0]
 			// Use type guard or check property
-			if (item && "raw" in item && "catalogId" in (item.raw as any)) {
+			if (
+				item &&
+				"raw" in item &&
+				"catalogId" in (item.raw as unknown as Record<string, unknown>)
+			) {
 				const cid = (item.raw as { catalogId: string }).catalogId
 				if (cid) {
 					targetCatalogId = cid
@@ -203,7 +212,15 @@ export function FileManagerPage() {
 				setTimeout(() => element.classList.remove("bg-primary/20"), 1000)
 			}
 		}, 300)
-	}, [selectedCatalogId, selectedItems, setCatalogId, setSelectedCatalogId, startTransition, setScopeStore, setScope])
+	}, [
+		selectedCatalogId,
+		selectedItems,
+		setCatalogId,
+		setSelectedCatalogId,
+		startTransition,
+		setScopeStore,
+		setScope,
+	])
 
 	// 8. EventHandlers & Helpers
 	const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
@@ -307,7 +324,9 @@ export function FileManagerPage() {
 
 	useEffect(() => {
 		if (!pendingLocate) return
-		const match = deferredItems.find((item) => item.kind === "file" && item.id === pendingLocate.fileId)
+		const match = deferredItems.find(
+			(item) => item.kind === "file" && item.id === pendingLocate.fileId,
+		)
 		if (match) {
 			setSelectedIds([match.id])
 			setPendingLocate(null)
@@ -342,7 +361,7 @@ export function FileManagerPage() {
 
 	return (
 		<div
-			{...getRootProps({ className: "bg-muted/20 p-4" })}
+			{...getRootProps({ className: "p-4 h-full" })}
 			style={{ minHeight: `calc(100vh - ${headerHeight}px)` }}
 		>
 			{isDragActive && !isRecycleBin && (
@@ -379,7 +398,8 @@ export function FileManagerPage() {
 							loading={catalogLoading}
 							locateTrigger={locateTrigger}
 							allowLocate={Boolean(
-								selectedCatalogId || (selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
+								selectedCatalogId ||
+									(selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
 							)}
 						/>
 					</Panel>

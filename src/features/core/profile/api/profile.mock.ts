@@ -118,7 +118,7 @@ export const profileHandlers = [
 		await delay(500)
 		return HttpResponse.json({
 			qrCodeBase64:
-				"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+				"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQAAAAB0CZXLAAACfElEQVR4XtWWQZKkMAwExcnP4KcYfsozfEJbWaJ3I2YOc9sYOQjaSOlDUZLoyB9WfA18Xf8DWKG1ZZ6xc417WzuJpUetvQnA47XE3LoOsNhWTAWNdQGk7iKblYpxK/soqFO9gBVH6PqQtqwfgMZd0lI2vUeaAUnJEUQd5OuXTmUbQM/Iub5dkH/nw7fs7wKy1h04hV/PkDrKrxI9AGTi1OXGR696f8ip+xi6mgASqI16H3VgM9NOUYGT99ABcDCw5tbPgeTYOJVEeA8dgLynB9cTCDyHnCIiMi25B7D2tJyHlpE7t2E3EUqbAJKmx2TworH8Gp/yW3sXQKaoxohTbGnV5WAjAIMOCbQ03Uuj9FYf9QBkiv5ceQKQyneCZcVdkw0AWRPuFKdsHJIf/n3pDbQBDgTqzpqLftmwjyvsZhOAeLr2kOyuiYHqxx+UBgClVc1SQTRabxx2sAegSsMaRFFyygJjn8i59h4Azc7aCDrFHvseDTGb1QEg9TiVKdckk1Z6ArINkNhUJXfQMsakNB0Ju9kAYN7KlwiXnFWfIYxpMD2KGwBopFnUPnRKoo4UdwWbAIrTI3si1pXm8jst/KHkOgDIROP0Rho3RrFcw7j5vocOQLBxZL9qFEvy8BwomS2AoWJjnVLHNIiPTB77ANLIvLJlNcr0CKYjbQBti6khoD4y49UEsE1pg056H+B8zXLjtAAsR8HMu2zaFGGj74tGQRdAKTyCYxQTTFcgd7d/C0DWXPblfLN8Vi7Ln9X+fYAqOVm2Qf471QrQBMuLxleWdbD5fNw7AEmK2TulkTKja86RyupIEwBRmzu99KaNK/suzOoA5A/rNwB/AGsf8cXVAxXcAAAAAElFTkSuQmCC",
 		})
 	}),
 
@@ -260,8 +260,8 @@ export const profileHandlers = [
 	// 登录日志
 	http.get("*/nexus-api/iam/login-log/current-user", async ({ request }) => {
 		const url = new URL(request.url)
-		const page = Number.parseInt(url.searchParams.get("pageNumber") || "1")
-		const size = Number.parseInt(url.searchParams.get("pageSize") || "10")
+		const page = Number.parseInt(url.searchParams.get("pageNumber") || "1", 10)
+		const size = Number.parseInt(url.searchParams.get("pageSize") || "10", 10)
 
 		await delay(400)
 
@@ -273,7 +273,7 @@ export const profileHandlers = [
 				id: `log_${index}`,
 				platform: "WEB",
 				userId: profileState.profile.userId,
-				tenantId: profileState.profile.tenantId!,
+				tenantId: profileState.profile.tenantId ?? "",
 				channel: Api.LoginLog.LoginChannel.PASSWORD,
 				clientId: "system-ui",
 				clientName: "管理系统前端",

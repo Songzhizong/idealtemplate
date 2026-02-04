@@ -9,8 +9,6 @@ import {
 	FolderOpen,
 	FolderPlus,
 	Globe,
-	FoldVertical,
-	LocateFixed,
 	MoreHorizontal,
 	Pencil,
 	RefreshCw,

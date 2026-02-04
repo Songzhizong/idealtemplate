@@ -82,8 +82,7 @@ export const useUploadStore = create<UploadStoreState>()(
 									...task,
 									status,
 									errorMessage: errorMessage ?? null,
-									finishedTime:
-										status === "completed" || status === "failed" ? Date.now() : null,
+									finishedTime: status === "completed" || status === "failed" ? Date.now() : null,
 								}
 							: task,
 					),

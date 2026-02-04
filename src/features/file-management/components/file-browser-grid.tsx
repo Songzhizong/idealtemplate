@@ -67,10 +67,10 @@ const GridItem = memo(function GridItem({
 				onItemContextMenu(item)
 			}}
 			draggable={!isRecycleBin}
-			onDragStart={(event: any) => onDragStart(event, item)}
-			onDragOver={(event: any) => onDragOverItem(event, item)}
+			onDragStart={(event) => onDragStart(event as unknown as DragEvent, item)}
+			onDragOver={(event) => onDragOverItem(event as unknown as DragEvent, item)}
 			onDragLeave={onDragLeaveItem}
-			onDrop={(event: any) => onDropOnItem(event, item)}
+			onDrop={(event) => onDropOnItem(event as unknown as DragEvent, item)}
 		>
 			<div className="flex h-14 items-center justify-center">
 				{item.kind === "folder" ? (

@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react"
 import type React from "react"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -28,13 +28,14 @@ export function RenameInput({
 	const mountedAtRef = useRef(Date.now())
 	const hasEditedRef = useRef(false)
 
-	const adjustTextareaHeight = () => {
+	const adjustTextareaHeight = useCallback(() => {
 		const el = inputRef.current
 		if (!el || !(el instanceof HTMLTextAreaElement)) return
 		el.style.height = "auto"
 		el.style.height = `${el.scrollHeight}px`
-	}
+	}, [])
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Reset refs on defaultValue change
 	useEffect(() => {
 		mountedAtRef.current = Date.now()
 		hasEditedRef.current = false
@@ -42,7 +43,7 @@ export function RenameInput({
 
 	useLayoutEffect(() => {
 		// Use rAF to ensure focus runs after ContextMenu closes (which restores focus to trigger)
-		let rafId = requestAnimationFrame(() => {
+		const rafId = requestAnimationFrame(() => {
 			if (!inputRef.current) return
 			inputRef.current.focus()
 			hasFocusedRef.current = true
@@ -56,10 +57,11 @@ export function RenameInput({
 		return () => cancelAnimationFrame(rafId)
 	}, [defaultValue])
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Update height on value change
 	useLayoutEffect(() => {
 		if (!multiline) return
 		adjustTextareaHeight()
-	}, [multiline, value])
+	}, [multiline, value, adjustTextareaHeight])
 
 	// Scroll into view if needed
 	useEffect(() => {
@@ -75,8 +77,8 @@ export function RenameInput({
 	const validate = (val: string): string | null => {
 		if (!val.trim()) return "名称不能为空"
 		if (/[\r\n]/.test(val)) return "名称不能包含换行"
-		if (/[\/\\:*?"<>|]/.test(val)) {
-			return "名称不能包含字符: \\ / : * ? \" < > |"
+		if (/[/\\:*?"<>|]/.test(val)) {
+			return '名称不能包含字符: \\ / : * ? " < > |'
 		}
 		return null
 	}
@@ -100,7 +102,7 @@ export function RenameInput({
 		try {
 			await onSubmit(trimmed)
 			// Success is handled by parent (unmounting this component)
-		} catch (e) {
+		} catch (_e) {
 			setError("重命名失败，请重试")
 			setIsLoading(false)
 			inputRef.current?.focus()
@@ -139,7 +141,7 @@ export function RenameInput({
 			<div className="relative">
 				{multiline ? (
 					<Textarea
-						ref={inputRef}
+						ref={inputRef as React.RefObject<HTMLTextAreaElement>}
 						autoFocus
 						rows={1}
 						value={value}
@@ -163,7 +165,7 @@ export function RenameInput({
 					/>
 				) : (
 					<Input
-						ref={inputRef}
+						ref={inputRef as React.RefObject<HTMLInputElement>}
 						autoFocus
 						value={value}
 						onChange={(e) => {
