@@ -60,8 +60,8 @@ const TableRowItem = memo(function TableRowItem({
 		<TableRow
 			data-selection-id={item.id}
 			className={cn(
-				"transition-colors",
-				isSelected ? "bg-primary/10" : "hover:bg-muted/50",
+				"group transition-colors relative",
+				isSelected ? "bg-primary/15" : "hover:bg-muted/50",
 				isDragOver && "bg-primary/20",
 			)}
 			onClick={(event) => onSelectItem(row.index, item.id, event)}
@@ -75,10 +75,16 @@ const TableRowItem = memo(function TableRowItem({
 			onDragLeave={onDragLeaveItem}
 			onDrop={(event) => onDropOnItem(event, item)}
 		>
-			{row.getVisibleCells().map((cell) => {
+			{row.getVisibleCells().map((cell, idx) => {
 				const meta = cell.column.columnDef.meta as { className?: string } | undefined
 				return (
-					<TableCell key={cell.id} className={cn(meta?.className)}>
+					<TableCell
+						key={cell.id}
+						className={cn("py-2.5", meta?.className, idx === 0 && "relative")}
+					>
+						{idx === 0 && isSelected && (
+							<div className="absolute inset-y-0 left-0 w-1 bg-primary" />
+						)}
 						{flexRender(cell.column.columnDef.cell, cell.getContext())}
 					</TableCell>
 				)

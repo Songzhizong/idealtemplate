@@ -36,11 +36,6 @@ export interface QueryFileArgs {
 	filename?: string
 }
 
-export interface BatchMoveFileArgs {
-	catalogId: string
-	fileIds: string[]
-}
-
 export interface InitMultipartUploadArgs {
 	originalName: string
 	contentType: string

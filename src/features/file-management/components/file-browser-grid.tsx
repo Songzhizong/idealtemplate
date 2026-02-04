@@ -1,4 +1,4 @@
-import { Check, Folder } from "lucide-react"
+import { Folder } from "lucide-react"
 import { type DragEvent, type MouseEvent, memo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
@@ -10,7 +10,6 @@ interface FileBrowserGridProps {
 	selectedSet: Set<string>
 	isRecycleBin: boolean
 	onSelectItem: (index: number, id: string, event: MouseEvent) => void
-	onToggleSelection: (id: string, event: MouseEvent) => void
 	onOpenItem: (item: FileManagerItem) => void
 	onItemContextMenu: (item: FileManagerItem) => void
 	onDragStart: (event: DragEvent, item: FileManagerItem) => void
@@ -27,7 +26,6 @@ const GridItem = memo(function GridItem({
 	isSelected,
 	isRecycleBin,
 	onSelectItem,
-	onToggleSelection,
 	onOpenItem,
 	onItemContextMenu,
 	onDragStart,
@@ -42,7 +40,6 @@ const GridItem = memo(function GridItem({
 	isSelected: boolean
 	isRecycleBin: boolean
 	onSelectItem: (index: number, id: string, event: MouseEvent) => void
-	onToggleSelection: (id: string, event: MouseEvent) => void
 	onOpenItem: (item: FileManagerItem) => void
 	onItemContextMenu: (item: FileManagerItem) => void
 	onDragStart: (event: DragEvent, item: FileManagerItem) => void
@@ -53,14 +50,14 @@ const GridItem = memo(function GridItem({
 	getPreviewUrl: (id: string) => string
 }) {
 	return (
-		<TooltipProvider>
+		<>
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: Handled by ContextMenu and Grid navigation */}
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: Grid items require specific layout structure */}
 			<div
 				data-selection-id={item.id}
 				className={cn(
 					"group relative rounded-lg border-2 border-transparent p-3 text-center transition",
-					isSelected ? "bg-primary/10 border-primary/20" : "hover:bg-muted/50",
+					isSelected ? "bg-primary/15 border-primary/30 shadow-sm" : "hover:bg-muted/50",
 					isDragOver && "bg-primary/20 border-primary border-dashed",
 				)}
 				onClick={(event) => onSelectItem(index, item.id, event)}
@@ -74,27 +71,6 @@ const GridItem = memo(function GridItem({
 				onDragLeave={onDragLeaveItem}
 				onDrop={(event) => onDropOnItem(event, item)}
 			>
-				<div className="absolute left-2 top-2 z-10">
-					{isSelected ? (
-						/* biome-ignore lint/a11y/useKeyWithClickEvents: Selection toggle handled by mouse click */
-						/* biome-ignore lint/a11y/noStaticElementInteractions: Visual selection indicator */
-						<div
-							data-selection-target="checkbox"
-							className="flex size-5 items-center justify-center rounded-md bg-primary text-primary-foreground"
-							onClick={(event) => onToggleSelection(item.id, event)}
-						>
-							<Check className="size-3" />
-						</div>
-					) : (
-						/* biome-ignore lint/a11y/useKeyWithClickEvents: Selection toggle handled by mouse click */
-						/* biome-ignore lint/a11y/noStaticElementInteractions: Visual selection indicator */
-						<div
-							data-selection-target="checkbox"
-							className="size-5 rounded-md border border-border/30 bg-background/80 opacity-0 group-hover:opacity-100"
-							onClick={(event) => onToggleSelection(item.id, event)}
-						/>
-					)}
-				</div>
 				<div className="flex h-14 items-center justify-center">
 					{item.kind === "folder" ? (
 						<span className="flex size-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -143,7 +119,7 @@ const GridItem = memo(function GridItem({
 					</p>
 				</div>
 			</div>
-		</TooltipProvider>
+		</>
 	)
 })
 
@@ -152,7 +128,6 @@ export const FileBrowserGrid = memo(function FileBrowserGrid({
 	selectedSet,
 	isRecycleBin,
 	onSelectItem,
-	onToggleSelection,
 	onOpenItem,
 	onItemContextMenu,
 	onDragStart,
@@ -171,26 +146,27 @@ export const FileBrowserGrid = memo(function FileBrowserGrid({
 	}
 
 	return (
-		<div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-			{items.map((item, index) => (
-				<GridItem
-					key={item.id}
-					item={item}
-					index={index}
-					isSelected={selectedSet.has(item.id)}
-					isRecycleBin={isRecycleBin}
-					onSelectItem={onSelectItem}
-					onToggleSelection={onToggleSelection}
-					onOpenItem={onOpenItem}
-					onItemContextMenu={onItemContextMenu}
-					onDragStart={onDragStart}
-					onDragOverItem={onDragOverItem}
-					onDragLeaveItem={onDragLeaveItem}
-					onDropOnItem={onDropOnItem}
-					isDragOver={dragOverId === item.id}
-					getPreviewUrl={getPreviewUrl}
-				/>
-			))}
-		</div>
+		<TooltipProvider>
+			<div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+				{items.map((item, index) => (
+					<GridItem
+						key={item.id}
+						item={item}
+						index={index}
+						isSelected={selectedSet.has(item.id)}
+						isRecycleBin={isRecycleBin}
+						onSelectItem={onSelectItem}
+						onOpenItem={onOpenItem}
+						onItemContextMenu={onItemContextMenu}
+						onDragStart={onDragStart}
+						onDragOverItem={onDragOverItem}
+						onDragLeaveItem={onDragLeaveItem}
+						onDropOnItem={onDropOnItem}
+						isDragOver={dragOverId === item.id}
+						getPreviewUrl={getPreviewUrl}
+					/>
+				))}
+			</div>
+		</TooltipProvider>
 	)
 })

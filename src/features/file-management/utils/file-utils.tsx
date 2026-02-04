@@ -73,8 +73,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 	// PDF
 	if (ext === "pdf" || isPdfType(contentType)) {
 		return {
-			bgColor: "bg-[#fff5f5]",
-			iconColor: "text-[#fa5252]",
+			bgColor: "bg-red-500/10",
+			iconColor: "text-red-500",
 			icon: <FileText className={iconSize} />,
 		}
 	}
@@ -86,8 +86,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 		contentType.includes("excel")
 	) {
 		return {
-			bgColor: "bg-[#e7f5ff]",
-			iconColor: "text-[#228be6]",
+			bgColor: "bg-blue-500/10",
+			iconColor: "text-blue-500",
 			icon: <FileSpreadsheet className={iconSize} />,
 		}
 	}
@@ -99,8 +99,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 		contentType.includes("msword")
 	) {
 		return {
-			bgColor: "bg-[#e7f5ff]",
-			iconColor: "text-[#228be6]",
+			bgColor: "bg-blue-500/10",
+			iconColor: "text-blue-500",
 			icon: <FileText className={iconSize} />,
 		}
 	}
@@ -112,8 +112,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 		contentType.includes("powerpoint")
 	) {
 		return {
-			bgColor: "bg-[#e7f5ff]",
-			iconColor: "text-[#228be6]",
+			bgColor: "bg-blue-500/10",
+			iconColor: "text-blue-500",
 			icon: <Presentation className={iconSize} />,
 		}
 	}
@@ -121,8 +121,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 	// Video
 	if (isVideoType(contentType) || ["mp4", "avi", "mov", "mkv", "wmv"].includes(ext)) {
 		return {
-			bgColor: "bg-[#f3f0ff]",
-			iconColor: "text-[#7950f2]",
+			bgColor: "bg-violet-500/10",
+			iconColor: "text-violet-500",
 			icon: <Film className={iconSize} />,
 		}
 	}
@@ -130,8 +130,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 	// Audio
 	if (isAudioType(contentType) || ["mp3", "wav", "flac", "aac", "ogg"].includes(ext)) {
 		return {
-			bgColor: "bg-[#ebfbee]",
-			iconColor: "text-[#40c057]",
+			bgColor: "bg-green-500/10",
+			iconColor: "text-green-500",
 			icon: <Music className={iconSize} />,
 		}
 	}
@@ -144,8 +144,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 		contentType.includes("7z")
 	) {
 		return {
-			bgColor: "bg-[#fff9db]",
-			iconColor: "text-[#fab005]",
+			bgColor: "bg-yellow-500/10",
+			iconColor: "text-yellow-500",
 			icon: <Archive className={iconSize} />,
 		}
 	}
@@ -153,8 +153,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 	// Image
 	if (isImageType(contentType) || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) {
 		return {
-			bgColor: "bg-[#fff0f6]",
-			iconColor: "text-[#f06595]",
+			bgColor: "bg-pink-500/10",
+			iconColor: "text-pink-500",
 			icon: <FileImage className={iconSize} />,
 		}
 	}
@@ -179,8 +179,8 @@ export function getFileStyle(fileName: string, contentType: string, size?: "sm" 
 		contentType.includes("text/")
 	) {
 		return {
-			bgColor: "bg-[#f8f9fa]",
-			iconColor: "text-[#495057]",
+			bgColor: "bg-slate-500/10",
+			iconColor: "text-slate-500",
 			icon: <FileCode className={iconSize} />,
 		}
 	}

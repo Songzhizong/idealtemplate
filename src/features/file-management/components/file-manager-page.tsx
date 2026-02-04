@@ -7,6 +7,7 @@ import { parseAsInteger, parseAsString, useQueryState, useQueryStates } from "nu
 import React, {
 	type ChangeEvent,
 	useCallback,
+	useDeferredValue,
 	useEffect,
 	useMemo,
 	useRef,
@@ -45,9 +46,9 @@ import {
 } from "../api/fss"
 import { FILE_MANAGER_BIZ_TYPE } from "../config"
 import { useFileUploadManager } from "../hooks/use-file-upload-manager"
+import { type FileBrowserScope, useFileBrowserStore } from "../store/file-browser-store"
 import type { FileCatalog, FileManagerItem } from "../types"
-
-import { FileBrowser } from "./file-browser"
+import { FileBrowserPane } from "./file-browser-pane"
 import { ConfirmDialog, FolderDialog, MoveDialog } from "./file-manager-dialogs"
 import { FolderSchema, findCatalogNode, findCatalogPath } from "./file-manager-helpers"
 import { FilePreviewDialog } from "./file-preview-dialog"
@@ -62,10 +63,19 @@ export function FileManagerPage() {
 
 	const [catalogId, setCatalogId] = useQueryState("cid", parseAsString)
 	const [viewMode, setViewMode] = useQueryState("mode", parseAsString.withDefault("list"))
-	const [scope, setScope] = useQueryState("scope", parseAsString.withDefault("active"))
+	const [urlScope, setScope] = useQueryState("scope", parseAsString.withDefault("active"))
+
+	const selectedCatalogId = useFileBrowserStore((state) => state.selectedCatalogId)
+	const setSelectedCatalogId = useFileBrowserStore((state) => state.setSelectedCatalogId)
+	const scope = useFileBrowserStore((state) => state.scope)
+	const setScopeStore = useFileBrowserStore((state) => state.setScope)
 
 	const isRecycleBin = scope === "recycle"
 	const normalizedCatalogId = catalogId || null
+	const deferredCatalogId = useDeferredValue(selectedCatalogId)
+	const deferredScope = useDeferredValue(scope)
+	const isDeferredRecycleBin = deferredScope === "recycle"
+	const itemCacheRef = useRef(new Map<string, { key: string; item: FileManagerItem }>())
 
 	const [pageState, _setPageState] = useQueryStates(
 		{
@@ -89,17 +99,17 @@ export function FileManagerPage() {
 		queryKey: [
 			"fss-files",
 			bizType,
-			scope,
-			normalizedCatalogId,
+			deferredScope,
+			deferredCatalogId,
 			debouncedSearchValue,
 			pageState.size,
 		],
 		queryFn: ({ pageParam = 1 }) => {
 			const params = {
-				...(normalizedCatalogId ? { catalogId: normalizedCatalogId } : {}),
+				...(deferredCatalogId ? { catalogId: deferredCatalogId } : {}),
 				...(debouncedSearchValue ? { filename: debouncedSearchValue } : {}),
 			}
-			if (isRecycleBin) {
+			if (isDeferredRecycleBin) {
 				return fetchGetRecycleBinFileList(bizType, params, pageParam as number, pageState.size)
 			}
 			return fetchGetFileList(bizType, params, pageParam as number, pageState.size)
@@ -114,35 +124,81 @@ export function FileManagerPage() {
 	const treeNodes = isRecycleBin ? (catalogTrees?.recycled ?? []) : (catalogTrees?.active ?? [])
 
 	const items = useMemo(() => {
+		const cache = itemCacheRef.current
+		const nextKeys = new Set<string>()
 		const folderNodes = (() => {
-			if (!normalizedCatalogId) return treeNodes
-			return findCatalogNode(treeNodes, normalizedCatalogId)?.children ?? []
+			if (!deferredCatalogId) return treeNodes
+			return findCatalogNode(treeNodes, deferredCatalogId)?.children ?? []
 		})()
-		const folders: FileManagerItem[] = (folderNodes ?? []).map((node) => ({
-			kind: "folder",
-			id: node.id,
-			name: node.name,
-			parentId: node.parentId,
-			deleted: node.deleted,
-			deleteTime: node.deleteTime ?? null,
-			raw: node,
-		}))
+		const folders: FileManagerItem[] = (folderNodes ?? []).map((node) => {
+			const cacheKey = `folder:${node.id}`
+			const key = [
+				"folder",
+				node.id,
+				node.name,
+				node.parentId ?? "",
+				node.deleted ? "1" : "0",
+				node.deleteTime ?? "",
+			].join("|")
+			nextKeys.add(cacheKey)
+			const cached = cache.get(cacheKey)
+			if (cached && cached.key === key) {
+				return cached.item
+			}
+			const item: FileManagerItem = {
+				kind: "folder",
+				id: node.id,
+				name: node.name,
+				parentId: node.parentId,
+				deleted: node.deleted,
+				deleteTime: node.deleteTime ?? null,
+				raw: node,
+			}
+			cache.set(cacheKey, { key, item })
+			return item
+		})
 
 		const fileRecords = fileQuery.data?.pages.flatMap((page) => page.content) ?? []
-		const files: FileManagerItem[] = fileRecords.map((file) => ({
-			kind: "file",
-			id: file.id,
-			name: file.fileName,
-			contentType: file.contentType,
-			objectSize: file.objectSize,
-			createdTime: file.createdTime,
-			deleted: file.deleted,
-			deleteTime: file.deleteTime ?? null,
-			raw: file,
-		}))
+		const files: FileManagerItem[] = fileRecords.map((file) => {
+			const cacheKey = `file:${file.id}`
+			const key = [
+				"file",
+				file.id,
+				file.fileName,
+				file.contentType,
+				file.objectSize ?? "",
+				file.createdTime ?? "",
+				file.deleted ? "1" : "0",
+				file.deleteTime ?? "",
+			].join("|")
+			nextKeys.add(cacheKey)
+			const cached = cache.get(cacheKey)
+			if (cached && cached.key === key) {
+				return cached.item
+			}
+			const item: FileManagerItem = {
+				kind: "file",
+				id: file.id,
+				name: file.fileName,
+				contentType: file.contentType,
+				objectSize: file.objectSize,
+				createdTime: file.createdTime,
+				deleted: file.deleted,
+				deleteTime: file.deleteTime ?? null,
+				raw: file,
+			}
+			cache.set(cacheKey, { key, item })
+			return item
+		})
+
+		for (const cacheKey of cache.keys()) {
+			if (!nextKeys.has(cacheKey)) {
+				cache.delete(cacheKey)
+			}
+		}
 
 		return [...folders, ...files]
-	}, [normalizedCatalogId, treeNodes, fileQuery.data?.pages])
+	}, [deferredCatalogId, treeNodes, fileQuery.data?.pages])
 
 	const [selectedIds, setSelectedIds] = useState<string[]>([])
 	const [previewItem, setPreviewItem] = useState<FileManagerItem | null>(null)
@@ -160,38 +216,55 @@ export function FileManagerPage() {
 		onConfirm: () => Promise<void> | void
 	} | null>(null)
 
+	const deferredItems = useDeferredValue(items)
+	const deferredSelectedIds = useDeferredValue(selectedIds)
+
 	const [_isPending, startTransition] = useTransition()
 
 	useEffect(() => {
-		const itemIds = new Set(items.map((item) => item.id))
+		const nextScope: FileBrowserScope = urlScope === "recycle" ? "recycle" : "active"
+		if (nextScope !== scope) {
+			setScopeStore(nextScope)
+		}
+	}, [scope, setScopeStore, urlScope])
+
+	useEffect(() => {
+		const nextCatalogId = normalizedCatalogId ?? null
+		if (nextCatalogId !== selectedCatalogId) {
+			setSelectedCatalogId(nextCatalogId)
+		}
+	}, [normalizedCatalogId, selectedCatalogId, setSelectedCatalogId])
+
+	useEffect(() => {
+		const itemIds = new Set(deferredItems.map((item) => item.id))
 		startTransition(() => {
 			setSelectedIds((prev) => prev.filter((id) => itemIds.has(id)))
 		})
-	}, [items])
+	}, [deferredItems])
 
 	const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
 		if (isRecycleBin) {
 			return [{ id: null, name: "回收站" }]
 		}
 		const base: BreadcrumbItem[] = [{ id: null, name: "全部文件" }]
-		if (!normalizedCatalogId) return base
-		const path = findCatalogPath(treeNodes, normalizedCatalogId)
+		if (!selectedCatalogId) return base
+		const path = findCatalogPath(treeNodes, selectedCatalogId)
 		if (!path) return base
 		return [...base, ...path.map((node) => ({ id: node.id, name: node.name }))]
-	}, [isRecycleBin, normalizedCatalogId, treeNodes])
+	}, [isRecycleBin, selectedCatalogId, treeNodes])
 
 	const pathIds = useMemo(() => {
-		if (!normalizedCatalogId) return new Set<string>()
-		const path = findCatalogPath(treeNodes, normalizedCatalogId)
+		if (!selectedCatalogId) return new Set<string>()
+		const path = findCatalogPath(treeNodes, selectedCatalogId)
 		return new Set(path?.map((node) => node.id) ?? [])
-	}, [normalizedCatalogId, treeNodes])
+	}, [selectedCatalogId, treeNodes])
 
 	const selectedItems = useMemo(() => {
-		const map = new Map(items.map((item) => [item.id, item]))
-		return selectedIds
+		const map = new Map(deferredItems.map((item) => [item.id, item]))
+		return deferredSelectedIds
 			.map((id) => map.get(id))
 			.filter((item): item is FileManagerItem => Boolean(item))
-	}, [items, selectedIds])
+	}, [deferredItems, deferredSelectedIds])
 
 	useEffect(() => {
 		setSelectedIds([])
@@ -199,7 +272,7 @@ export function FileManagerPage() {
 
 	const { startUploads, pauseUpload, cancelUpload, resumeUpload } = useFileUploadManager({
 		bizType,
-		catalogId: normalizedCatalogId,
+		catalogId: selectedCatalogId,
 		onCompleted: () => {
 			void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
 		},
@@ -217,20 +290,23 @@ export function FileManagerPage() {
 	const handleUploadFiles = useCallback(
 		(files: File[]) => {
 			if (isRecycleBin || files.length === 0) return
-			startUploads(files, normalizedCatalogId)
+			startUploads(files, selectedCatalogId)
 		},
-		[isRecycleBin, normalizedCatalogId, startUploads],
+		[isRecycleBin, selectedCatalogId, startUploads],
 	)
 
 	const handleOpenItem = useCallback(
 		(item: FileManagerItem) => {
 			if (item.kind === "folder") {
-				void setCatalogId(item.id)
+				setSelectedCatalogId(item.id)
+				startTransition(() => {
+					void setCatalogId(item.id)
+				})
 				return
 			}
 			setPreviewItem(item)
 		},
-		[setCatalogId],
+		[setCatalogId, setSelectedCatalogId],
 	)
 
 	const handleDownloadItem = useCallback((item: FileManagerItem) => {
@@ -446,9 +522,7 @@ export function FileManagerPage() {
 		async (values: z.infer<typeof FolderSchema>) => {
 			if (dialogMode === "create") {
 				const parentId =
-					dialogTarget && !("kind" in dialogTarget)
-						? dialogTarget.id
-						: (normalizedCatalogId ?? null)
+					dialogTarget && !("kind" in dialogTarget) ? dialogTarget.id : (selectedCatalogId ?? null)
 				const created = await fetchCreateCatalog(bizType, {
 					parentId,
 					name: values.name,
@@ -501,7 +575,7 @@ export function FileManagerPage() {
 			setDialogTarget(null)
 			folderForm.reset()
 		},
-		[dialogMode, dialogTarget, folderForm, normalizedCatalogId, queryClient, refetchCatalogs],
+		[dialogMode, dialogTarget, folderForm, queryClient, refetchCatalogs, selectedCatalogId],
 	)
 
 	const handleOpenFolderDialog = useCallback(
@@ -550,24 +624,31 @@ export function FileManagerPage() {
 
 	const handleSelectCatalog = useCallback(
 		(id: string | null) => {
-			void setCatalogId(id)
+			setSelectedCatalogId(id)
+			startTransition(() => {
+				void setCatalogId(id)
+			})
 		},
-		[setCatalogId],
+		[setCatalogId, setSelectedCatalogId],
 	)
 
 	const handleToggleRecycle = useCallback(
 		(value: boolean) => {
-			void setScope(value ? "recycle" : "active")
-			void setCatalogId(null)
+			setSelectedCatalogId(null)
+			setScopeStore(value ? "recycle" : "active")
+			startTransition(() => {
+				void setScope(value ? "recycle" : "active")
+				void setCatalogId(null)
+			})
 		},
-		[setCatalogId, setScope],
+		[setCatalogId, setScope, setScopeStore, setSelectedCatalogId],
 	)
 
 	const handleBatchMoveToCatalog = useCallback(
 		async (targetId: string, ids: string[]) => {
 			// Filter out items that are already in the target catalog to avoid redundant calls
 			// Though for folders, we need to check parentId matches targetId
-			const itemsToMove = items.filter((item) => ids.includes(item.id))
+			const itemsToMove = deferredItems.filter((item) => ids.includes(item.id))
 			const fileIds = itemsToMove.filter((item) => item.kind === "file").map((item) => item.id)
 			const folderIds = itemsToMove
 				.filter((item) => item.kind === "folder" && item.id !== targetId)
@@ -589,7 +670,7 @@ export function FileManagerPage() {
 				toast.error("移动失败")
 			}
 		},
-		[items, queryClient, refetchCatalogs],
+		[deferredItems, queryClient, refetchCatalogs],
 	)
 
 	const handleTreeAction = useCallback(
@@ -687,7 +768,6 @@ export function FileManagerPage() {
 				.map((item) => ({ id: item.id, kind: item.kind })),
 		)
 	}, [handleMoveTargets, selectedItems])
-
 	const handleBreadcrumbClick = useCallback(
 		(id: string | null) => {
 			void setCatalogId(id)
@@ -760,7 +840,7 @@ export function FileManagerPage() {
 		[resumeUpload],
 	)
 
-	const folderCount = items.filter((item) => item.kind === "folder").length
+	const folderCount = deferredItems.filter((item) => item.kind === "folder").length
 	const totalFileCount = fileQuery.data?.pages[0]?.totalElements ?? 0
 	const fileSummary = folderCount + totalFileCount
 
@@ -769,7 +849,7 @@ export function FileManagerPage() {
 			.filter((item) => item.kind === "folder")
 			.map((item) => item.id)
 		if (folderTargets.length === 0) {
-			return normalizedCatalogId ? [normalizedCatalogId] : []
+			return selectedCatalogId ? [selectedCatalogId] : []
 		}
 		const disabled = new Set<string>()
 		const collectDescendants = (node: FileCatalog) => {
@@ -783,7 +863,7 @@ export function FileManagerPage() {
 			if (targetNode) collectDescendants(targetNode)
 		}
 		return Array.from(disabled)
-	}, [moveTargets, normalizedCatalogId, treeNodes])
+	}, [moveTargets, selectedCatalogId, treeNodes])
 
 	return (
 		<div className="bg-muted/20 p-4" style={{ minHeight: `calc(100vh - ${headerHeight}px)` }}>
@@ -795,7 +875,7 @@ export function FileManagerPage() {
 					<Panel defaultSize={24} minSize={18} maxSize={32}>
 						<FileSidebar
 							nodes={treeNodes}
-							selectedId={normalizedCatalogId}
+							selectedId={selectedCatalogId}
 							pathIds={pathIds}
 							isRecycleBin={isRecycleBin}
 							onSelectCatalog={handleSelectCatalog}
@@ -839,10 +919,10 @@ export function FileManagerPage() {
 							)}
 
 							<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-								<FileBrowser
-									items={items}
+								<FileBrowserPane
+									items={deferredItems}
 									viewMode={viewMode === "grid" ? "grid" : "list"}
-									selectedIds={selectedIds}
+									selectedIds={deferredSelectedIds}
 									onSelectionChange={setSelectedIds}
 									onOpenItem={handleOpenItem}
 									onRenameItem={handleRenameItem}
@@ -868,7 +948,7 @@ export function FileManagerPage() {
 
 							<div className="flex items-center justify-between border-t border-border/30 px-4 py-2 text-sm text-muted-foreground">
 								<span>
-									{fileSummary} 个项目 · 已选 {selectedIds.length} 项
+									{fileSummary} 个项目 · 已选 {deferredSelectedIds.length} 项
 								</span>
 							</div>
 						</div>

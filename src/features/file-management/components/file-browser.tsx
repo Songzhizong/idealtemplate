@@ -3,7 +3,6 @@ import { getCoreRowModel, useReactTable } from "@tanstack/react-table"
 import { Folder, Upload } from "lucide-react"
 import { type MouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -73,23 +72,6 @@ export const FileBrowser = memo(function FileBrowser({
 	const isDraggingRef = useRef(false)
 	const containerRef = useRef<HTMLDivElement | null>(null)
 	const observerRef = useRef<HTMLDivElement | null>(null)
-	const [selectionBox, setSelectionBox] = useState<{
-		active: boolean
-		startX: number
-		startY: number
-		currentX: number
-		currentY: number
-		initialSelectedIds: string[]
-		type: "box" | "swipe"
-	}>({
-		active: false,
-		startX: 0,
-		startY: 0,
-		currentX: 0,
-		currentY: 0,
-		initialSelectedIds: [],
-		type: "box",
-	})
 	const [contextMenuItem, setContextMenuItem] = useState<FileManagerItem | null>(null)
 
 	useEffect(() => {
@@ -252,23 +234,31 @@ export const FileBrowser = memo(function FileBrowser({
 			const isMulti = event.metaKey || event.ctrlKey
 			const isRange = event.shiftKey
 
-			if (!isMulti && !isRange) {
-				return
-			}
-
+			// Region selection with Shift
 			if (isRange && lastSelectedIndexRef.current !== null) {
 				const start = Math.min(lastSelectedIndexRef.current, index)
 				const end = Math.max(lastSelectedIndexRef.current, index)
 				const rangeIds = items.slice(start, end + 1).map((item) => item.id)
-				const next = new Set(selectedIdsRef.current)
-				for (const rangeId of rangeIds) {
-					next.add(rangeId)
+
+				let next: Set<string>
+				if (isMulti) {
+					// Add range to existing selection if Ctrl/Cmd is also pressed
+					next = new Set(selectedIdsRef.current)
+					for (const rangeId of rangeIds) {
+						next.add(rangeId)
+					}
+				} else {
+					// Replace selection with range
+					next = new Set(rangeIds)
 				}
+
 				onSelectionChange(Array.from(next))
-				lastSelectedIndexRef.current = index
+				// Note: standard file manager behavior usually doesn't update pivot on shift-click
+				// but we'll follow simple logic for now.
 				return
 			}
 
+			// Toggle selection with Ctrl/Cmd (Multi-select)
 			if (isMulti) {
 				const next = new Set(selectedIdsRef.current)
 				if (next.has(id)) {
@@ -281,24 +271,11 @@ export const FileBrowser = memo(function FileBrowser({
 				return
 			}
 
+			// Normal click: select single item
 			onSelectionChange([id])
 			lastSelectedIndexRef.current = index
 		},
 		[items, onSelectionChange],
-	)
-
-	const handleToggleSelection = useCallback(
-		(id: string, event: MouseEvent) => {
-			event.stopPropagation()
-			const next = new Set(selectedIdsRef.current)
-			if (next.has(id)) {
-				next.delete(id)
-			} else {
-				next.add(id)
-			}
-			onSelectionChange(Array.from(next))
-		},
-		[onSelectionChange],
 	)
 
 	const actionProps = useMemo(
@@ -396,35 +373,6 @@ export const FileBrowser = memo(function FileBrowser({
 	const columns = useMemo<ColumnDef<FileManagerItem>[]>(
 		() => [
 			{
-				id: "select",
-				header: "",
-				cell: ({ row }) => {
-					const item = row.original
-					return (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: Stop propagation wrapper
-						// biome-ignore lint/a11y/noStaticElementInteractions: Stop propagation wrapper
-						<div onClick={(e) => e.stopPropagation()}>
-							<Checkbox
-								data-selection-target="checkbox"
-								checked={selectedSet.has(item.id)}
-								onCheckedChange={() => {
-									const next = new Set(selectedIdsRef.current)
-									if (next.has(item.id)) {
-										next.delete(item.id)
-									} else {
-										next.add(item.id)
-									}
-									onSelectionChange(Array.from(next))
-								}}
-							/>
-						</div>
-					)
-				},
-				meta: {
-					className: "w-10",
-				},
-			},
-			{
 				id: "icon",
 				header: "",
 				cell: ({ row }) => {
@@ -491,7 +439,7 @@ export const FileBrowser = memo(function FileBrowser({
 				},
 			},
 		],
-		[actionProps, selectedSet, onSelectionChange],
+		[actionProps],
 	)
 
 	const table = useReactTable({
@@ -524,84 +472,10 @@ export const FileBrowser = memo(function FileBrowser({
 							const itemTarget = target.closest("[data-selection-id]")
 							const isCheckbox = !!target.closest('[data-selection-target="checkbox"]')
 
-							// Start selection if we clicked the background (no itemTarget) or a checkbox
+							// Background click behavior only
 							if (itemTarget && !isCheckbox) return
 
 							isDraggingRef.current = false
-							const rect = event.currentTarget.getBoundingClientRect()
-							const x = event.clientX - rect.left
-							const y = event.clientY - rect.top
-							setSelectionBox({
-								active: true,
-								startX: x,
-								startY: y,
-								currentX: x,
-								currentY: y,
-								initialSelectedIds: event.metaKey || event.ctrlKey ? [...selectedIds] : [],
-								type: viewMode === "list" || isCheckbox ? "swipe" : "box",
-							})
-						}}
-						onMouseMove={(event) => {
-							if (!selectionBox.active || !containerRef.current) return
-							const rect = containerRef.current.getBoundingClientRect()
-							const currentX = event.clientX - rect.left
-							const currentY = event.clientY - rect.top
-
-							if (
-								!isDraggingRef.current &&
-								(Math.abs(currentX - selectionBox.startX) > 5 ||
-									Math.abs(currentY - selectionBox.startY) > 5)
-							) {
-								isDraggingRef.current = true
-							}
-
-							setSelectionBox((prev) => ({
-								...prev,
-								currentX,
-								currentY,
-							}))
-
-							const left = Math.min(selectionBox.startX, currentX)
-							const top = Math.min(selectionBox.startY, currentY)
-							const right = Math.max(selectionBox.startX, currentX)
-							const bottom = Math.max(selectionBox.startY, currentY)
-
-							const elements = containerRef.current.querySelectorAll("[data-selection-id]")
-							const newSelectedIds = new Set(selectionBox.initialSelectedIds)
-
-							for (const el of Array.from(elements) as HTMLElement[]) {
-								const elRect = el.getBoundingClientRect()
-								const relativeElRect = {
-									left: elRect.left - rect.left,
-									top: elRect.top - rect.top,
-									right: elRect.right - rect.left,
-									bottom: elRect.bottom - rect.top,
-								}
-
-								// For swipe mode in list view, we care mostly about vertical intersection
-								// but full intersection works too and is more consistent.
-								const isIntersecting =
-									relativeElRect.left < right &&
-									relativeElRect.right > left &&
-									relativeElRect.top < bottom &&
-									relativeElRect.bottom > top
-
-								const id = el.getAttribute("data-selection-id")
-								if (id) {
-									if (isIntersecting) {
-										newSelectedIds.add(id)
-									} else if (!selectionBox.initialSelectedIds.includes(id)) {
-										newSelectedIds.delete(id)
-									}
-								}
-							}
-
-							onSelectionChange(Array.from(newSelectedIds))
-						}}
-						onMouseUp={() => {
-							if (selectionBox.active) {
-								setSelectionBox((prev) => ({ ...prev, active: false }))
-							}
 						}}
 						onClick={(event) => {
 							if (isDraggingRef.current) return
@@ -616,17 +490,6 @@ export const FileBrowser = memo(function FileBrowser({
 							}
 						}}
 					>
-						{selectionBox.active && selectionBox.type === "box" && (
-							<div
-								className="pointer-events-none absolute z-50 border border-primary bg-primary/20"
-								style={{
-									left: Math.min(selectionBox.startX, selectionBox.currentX),
-									top: Math.min(selectionBox.startY, selectionBox.currentY),
-									width: Math.abs(selectionBox.currentX - selectionBox.startX),
-									height: Math.abs(selectionBox.currentY - selectionBox.startY),
-								}}
-							/>
-						)}
 						{loading ? (
 							<div className="flex h-full items-center justify-center">
 								<Spinner className="size-8" />
@@ -638,7 +501,6 @@ export const FileBrowser = memo(function FileBrowser({
 									selectedSet={selectedSet}
 									isRecycleBin={isRecycleBin}
 									onSelectItem={handleSelect}
-									onToggleSelection={handleToggleSelection}
 									onOpenItem={onOpenItem}
 									onItemContextMenu={handleItemContextMenu}
 									onDragStart={handleDragStart}
