@@ -5,6 +5,8 @@ import {
 	FolderPlus,
 	Grid3X3,
 	List,
+	PanelLeft,
+	PanelLeftClose,
 	RefreshCw,
 	Trash2,
 	Upload,
@@ -43,6 +45,8 @@ interface FileToolbarProps {
 	onHardDeleteSelected: () => void
 	onClearRecycle: () => void
 	onBreadcrumbClick: (id: string | null) => void
+	sidebarVisible?: boolean
+	onToggleSidebar?: () => void
 }
 
 export const FileToolbar = memo(function FileToolbar({
@@ -62,9 +66,25 @@ export const FileToolbar = memo(function FileToolbar({
 	onHardDeleteSelected,
 	onClearRecycle,
 	onBreadcrumbClick,
+	sidebarVisible = true,
+	onToggleSidebar,
 }: FileToolbarProps) {
 	return (
 		<div className="flex h-14 items-center gap-4 border-b border-border/30 bg-card px-4">
+			{onToggleSidebar && (
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-8 w-8 text-muted-foreground"
+					onClick={onToggleSidebar}
+				>
+					{sidebarVisible ? (
+						<PanelLeftClose className="size-4" />
+					) : (
+						<PanelLeft className="size-4" />
+					)}
+				</Button>
+			)}
 			<div className="flex min-w-0 flex-1 items-center gap-2">
 				<nav className="flex items-center text-sm text-muted-foreground">
 					{breadcrumbs.map((item, index) => (

@@ -29,6 +29,17 @@ export function formatSpeed(bytesPerSecond: number) {
 	return `${formatFileSize(bytesPerSecond)}/s`
 }
 
+export function formatDuration(totalSeconds: number) {
+	if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "即将完成"
+	const seconds = Math.ceil(totalSeconds)
+	const hours = Math.floor(seconds / 3600)
+	const minutes = Math.floor((seconds % 3600) / 60)
+	const remaining = seconds % 60
+	if (hours > 0) return `${hours}h ${minutes}m`
+	if (minutes > 0) return `${minutes}m ${remaining}s`
+	return `${remaining}s`
+}
+
 export function parseObjectSize(value: string | null | undefined) {
 	if (!value) return 0
 	const parsed = Number(value)

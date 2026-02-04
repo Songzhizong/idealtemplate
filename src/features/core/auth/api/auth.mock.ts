@@ -1,28 +1,7 @@
 import { delay, HttpResponse, http } from "msw"
 import { mockRegistry } from "@/mocks/registry"
-import { PERMISSIONS, type UserProfile } from "@/types/auth"
+import { PERMISSIONS } from "@/types/auth"
 import { LoginResponseType } from "./login"
-
-const MOCK_USER: UserProfile = {
-	userId: "1",
-	containerId: null,
-	name: "Admin User",
-	account: "admin",
-	phone: "13800000000",
-	email: "admin@example.com",
-	mfaEnabled: false,
-	tenantId: "1",
-	tenantName: "Default Tenant",
-	tenantAbbreviation: "DT",
-	accessibleTenants: [
-		{
-			id: "1",
-			name: "Default Tenant",
-			abbreviation: "DT",
-			blocked: false,
-		},
-	],
-}
 
 export const authHandlers = [
 	// Check Captcha
@@ -86,12 +65,6 @@ export const authHandlers = [
 				access_token: "mock-token-selected-456",
 			},
 		})
-	}),
-
-	// Get Current User Profile
-	http.get("*/nexus-api/iam/me/profile", async () => {
-		await delay(200)
-		return HttpResponse.json(MOCK_USER)
 	}),
 
 	// Get Permissions

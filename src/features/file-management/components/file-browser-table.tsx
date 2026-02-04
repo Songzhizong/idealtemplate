@@ -1,4 +1,5 @@
 import { flexRender, type Table as ReactTable, type Row } from "@tanstack/react-table"
+import { AnimatePresence, motion } from "motion/react"
 import React, { type DragEvent, type MouseEvent, memo } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -57,23 +58,27 @@ const TableRowItem = memo(function TableRowItem({
 	isDragOver: boolean
 }) {
 	return (
-		<TableRow
+		<motion.tr
+			layout
+			initial={{ opacity: 0, y: 10 }}
+			animate={{ opacity: 1, y: 0 }}
+			exit={{ opacity: 0, x: -10, transition: { duration: 0.2 } }}
 			data-selection-id={item.id}
 			className={cn(
-				"group transition-colors relative",
-				isSelected ? "bg-primary/15" : "hover:bg-muted/50",
+				"group transition-colors relative border-b hover:bg-muted/50 data-[state=selected]:bg-muted",
+				isSelected ? "bg-primary/15" : "",
 				isDragOver && "bg-primary/20",
 			)}
-			onClick={(event) => onSelectItem(row.index, item.id, event)}
+			onClick={(event: MouseEvent) => onSelectItem(row.index, item.id, event)}
 			onDoubleClick={() => onOpenItem(item)}
 			onContextMenu={() => {
 				onItemContextMenu(item)
 			}}
 			draggable={!isRecycleBin}
-			onDragStart={(event) => onDragStart(event, item)}
-			onDragOver={(event) => onDragOverItem(event, item)}
+			onDragStart={(event: any) => onDragStart(event, item)}
+			onDragOver={(event: any) => onDragOverItem(event, item)}
 			onDragLeave={onDragLeaveItem}
-			onDrop={(event) => onDropOnItem(event, item)}
+			onDrop={(event: any) => onDropOnItem(event, item)}
 		>
 			{row.getVisibleCells().map((cell, idx) => {
 				const meta = cell.column.columnDef.meta as { className?: string } | undefined
@@ -89,7 +94,7 @@ const TableRowItem = memo(function TableRowItem({
 					</TableCell>
 				)
 			})}
-		</TableRow>
+		</motion.tr>
 	)
 })
 
@@ -150,23 +155,25 @@ export const FileBrowserTable = memo(function FileBrowserTable({
 			<div className="flex-1 overflow-auto p-4 pt-0">
 				<Table>
 					<TableBody>
-						{table.getRowModel().rows.map((row) => (
-							<TableRowItem
-								key={row.id}
-								row={row}
-								item={row.original}
-								isSelected={selectedSet.has(row.original.id)}
-								isRecycleBin={isRecycleBin}
-								onSelectItem={onSelectItem}
-								onOpenItem={onOpenItem}
-								onItemContextMenu={onItemContextMenu}
-								onDragStart={onDragStart}
-								onDragOverItem={onDragOverItem}
-								onDragLeaveItem={onDragLeaveItem}
-								onDropOnItem={onDropOnItem}
-								isDragOver={dragOverId === row.original.id}
-							/>
-						))}
+						<AnimatePresence initial={false} mode="popLayout">
+							{table.getRowModel().rows.map((row) => (
+								<TableRowItem
+									key={row.id}
+									row={row}
+									item={row.original}
+									isSelected={selectedSet.has(row.original.id)}
+									isRecycleBin={isRecycleBin}
+									onSelectItem={onSelectItem}
+									onOpenItem={onOpenItem}
+									onItemContextMenu={onItemContextMenu}
+									onDragStart={onDragStart}
+									onDragOverItem={onDragOverItem}
+									onDragLeaveItem={onDragLeaveItem}
+									onDropOnItem={onDropOnItem}
+									isDragOver={dragOverId === row.original.id}
+								/>
+							))}
+						</AnimatePresence>
 					</TableBody>
 				</Table>
 				<div ref={observerRef} className="h-4 w-full">

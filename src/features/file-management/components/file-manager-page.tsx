@@ -1,56 +1,24 @@
 "use client"
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Trash2 } from "lucide-react"
-import { parseAsInteger, parseAsString, useQueryState, useQueryStates } from "nuqs"
-import React, {
-	type ChangeEvent,
-	useCallback,
-	useDeferredValue,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-	useTransition,
-} from "react"
-import { useForm } from "react-hook-form"
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
-import { toast } from "sonner"
-import type { z } from "zod"
+import { useQueryClient } from "@tanstack/react-query"
+import { AlertTriangle } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
+import { type ImperativePanelHandle, Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
+import { useDropzone } from "react-dropzone"
+
 import { useThemeStore } from "@/hooks/use-theme-store"
-import {
-	fetchBatchDeleteFile,
-	fetchBatchHardDeleteFile,
-	fetchBatchMoveFile,
-	fetchBatchRecoveryFile,
-	fetchChangeCatalogParent,
-	fetchCheckCatalogHasChildren,
-	fetchClearRecycleBin,
-	fetchCreateCatalog,
-	fetchDeleteCatalog,
-	fetchDeleteFile,
-	fetchForceDeleteCatalog,
-	fetchGetFileCatalogTrees,
-	fetchGetFileList,
-	fetchGetRecycleBinFileList,
-	fetchHardDeleteCatalog,
-	fetchHardDeleteFile,
-	fetchRecoveryCatalog,
-	fetchRecoveryFile,
-	fetchRenameCatalog,
-	fetchRenameFile,
-	fetchUpdateCatalogPublic,
-	getDownloadUrl,
-	getViewUrl,
-} from "../api/fss"
 import { FILE_MANAGER_BIZ_TYPE } from "../config"
+// Hooks
+import { useFileManagerActions } from "../hooks/use-file-manager-actions"
+import { useFileManagerParams } from "../hooks/use-file-manager-params"
+import { useFileManagerQuery } from "../hooks/use-file-manager-query"
+import { useFileManagerSelection } from "../hooks/use-file-manager-selection"
+import { useFileManagerUpload } from "../hooks/use-file-manager-upload"
 import { useFileUploadManager } from "../hooks/use-file-upload-manager"
-import { type FileBrowserScope, useFileBrowserStore } from "../store/file-browser-store"
-import type { FileCatalog, FileManagerItem } from "../types"
+import { useUploadStore } from "../store/upload-store"
 import { FileBrowserPane } from "./file-browser-pane"
 import { ConfirmDialog, FolderDialog, MoveDialog } from "./file-manager-dialogs"
-import { FolderSchema, findCatalogNode, findCatalogPath } from "./file-manager-helpers"
+import { findCatalogPath } from "./file-manager-helpers"
 import { FilePreviewDialog } from "./file-preview-dialog"
 import { FileSidebar } from "./file-sidebar"
 import { type BreadcrumbItem, FileToolbar } from "./file-toolbar"
@@ -61,187 +29,183 @@ export function FileManagerPage() {
 	const queryClient = useQueryClient()
 	const bizType = FILE_MANAGER_BIZ_TYPE
 
-	const [catalogId, setCatalogId] = useQueryState("cid", parseAsString)
-	const [viewMode, setViewMode] = useQueryState("mode", parseAsString.withDefault("list"))
-	const [urlScope, setScope] = useQueryState("scope", parseAsString.withDefault("active"))
+	// 1. Params & State
+	const {
+		setCatalogId,
+		viewMode,
+		setViewMode,
+		selectedCatalogId,
+		setSelectedCatalogId,
+		setScope,
+		setScopeStore,
+		isRecycleBin,
+		deferredCatalogId,
+		deferredScope,
+		isDeferredRecycleBin,
+		pageState,
+		debouncedSearchValue,
+	} = useFileManagerParams()
 
-	const selectedCatalogId = useFileBrowserStore((state) => state.selectedCatalogId)
-	const setSelectedCatalogId = useFileBrowserStore((state) => state.setSelectedCatalogId)
-	const scope = useFileBrowserStore((state) => state.scope)
-	const setScopeStore = useFileBrowserStore((state) => state.setScope)
+	// 2. Data Query
+	const {
+		catalogTrees,
+		catalogLoading,
+		refetchCatalogs,
+		fileQuery,
+		treeNodes,
+		items,
+		deferredItems,
+	} = useFileManagerQuery({
+		bizType,
+		deferredScope,
+		deferredCatalogId,
+		debouncedSearchValue,
+		pageSize: pageState.size,
+		isDeferredRecycleBin,
+		isRecycleBin,
+	})
 
-	const isRecycleBin = scope === "recycle"
-	const normalizedCatalogId = catalogId || null
-	const deferredCatalogId = useDeferredValue(selectedCatalogId)
-	const deferredScope = useDeferredValue(scope)
-	const isDeferredRecycleBin = deferredScope === "recycle"
-	const itemCacheRef = useRef(new Map<string, { key: string; item: FileManagerItem }>())
+	// 3. Selection
+	const {
+		selectedIds,
+		setSelectedIds,
+		deferredSelectedIds,
+		previewItem,
+		setPreviewItem,
+		selectedItems,
+		startTransition,
+	} = useFileManagerSelection(deferredItems)
 
-	const [pageState, _setPageState] = useQueryStates(
-		{
-			size: parseAsInteger.withDefault(50),
+	// 4. File Upload (Core)
+	const {
+		startUploads,
+		pauseUpload,
+		cancelUpload,
+		resumeUpload,
+		retryUpload,
+		pauseAllUploads,
+		resumeAllUploads,
+		cancelAllUploads,
+	} = useFileUploadManager({
+		bizType,
+		catalogId: selectedCatalogId,
+		onCompleted: () => {
+			void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
 		},
-		{ history: "push", shallow: false },
+	})
+	const uploadTasks = useUploadStore((state) => state.uploadTasks)
+	const [pendingLocate, setPendingLocate] = useState<{ fileId: string; catalogId: string | null } | null>(
+		null,
+	)
+	const getCatalogPath = useCallback(
+		(catalogId: string | null) => {
+			if (!catalogId) return "/"
+			const path = findCatalogPath(treeNodes, catalogId)
+			if (!path || path.length === 0) return "/"
+			return `/${path.map((node) => node.name).join("/")}/`
+		},
+		[treeNodes],
 	)
 
-	const [debouncedSearchValue] = useQueryState("filename", parseAsString.withDefault(""))
-
+	// 5. Upload UI Logic
 	const {
-		data: catalogTrees,
-		isLoading: catalogLoading,
-		refetch: refetchCatalogs,
-	} = useQuery({
-		queryKey: ["fss-catalog-trees", bizType],
-		queryFn: () => fetchGetFileCatalogTrees(bizType),
+		pendingUploadFiles,
+		setPendingUploadFiles,
+		uploadDialogOpen,
+		setUploadDialogOpen,
+		uploadTargetId,
+		setUploadTargetId,
+		uploadFileInputRef,
+		handleUploadFiles,
+		handleConfirmUpload,
+		handleUploadFilesClick,
+		handleUploadFolderClick,
+		handleTriggerUpload,
+		handleFileInputChange,
+		handleFolderInputChange,
+		setFolderInputRef,
+	} = useFileManagerUpload({
+		isRecycleBin,
+		selectedCatalogId,
+		getCatalogPath,
+		startUploads,
 	})
 
-	const fileQuery = useInfiniteQuery({
-		queryKey: [
-			"fss-files",
-			bizType,
-			deferredScope,
-			deferredCatalogId,
-			debouncedSearchValue,
-			pageState.size,
-		],
-		queryFn: ({ pageParam = 1 }) => {
-			const params = {
-				...(deferredCatalogId ? { catalogId: deferredCatalogId } : {}),
-				...(debouncedSearchValue ? { filename: debouncedSearchValue } : {}),
-			}
-			if (isDeferredRecycleBin) {
-				return fetchGetRecycleBinFileList(bizType, params, pageParam as number, pageState.size)
-			}
-			return fetchGetFileList(bizType, params, pageParam as number, pageState.size)
-		},
-		initialPageParam: 1,
-		getNextPageParam: (lastPage) => {
-			if (lastPage.pageNumber >= lastPage.totalPages) return undefined
-			return lastPage.pageNumber + 1
-		},
+	// 6. Actions & Dialogs
+	const actions = useFileManagerActions({
+		bizType,
+		selectedCatalogId,
+		refetchCatalogs,
+		selectedItems,
+		setSelectedIds,
+		setCatalogId,
+		setSelectedCatalogId,
+		startTransition,
+		items,
+		treeNodes,
+		setPreviewItem,
 	})
 
-	const treeNodes = isRecycleBin ? (catalogTrees?.recycled ?? []) : (catalogTrees?.active ?? [])
+	// 7. Sidebar Control
+	const sidebarRef = useRef<ImperativePanelHandle>(null)
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+	const [locateTrigger, setLocateTrigger] = useState(0)
 
-	const items = useMemo(() => {
-		const cache = itemCacheRef.current
-		const nextKeys = new Set<string>()
-		const folderNodes = (() => {
-			if (!deferredCatalogId) return treeNodes
-			return findCatalogNode(treeNodes, deferredCatalogId)?.children ?? []
-		})()
-		const folders: FileManagerItem[] = (folderNodes ?? []).map((node) => {
-			const cacheKey = `folder:${node.id}`
-			const key = [
-				"folder",
-				node.id,
-				node.name,
-				node.parentId ?? "",
-				node.deleted ? "1" : "0",
-				node.deleteTime ?? "",
-			].join("|")
-			nextKeys.add(cacheKey)
-			const cached = cache.get(cacheKey)
-			if (cached && cached.key === key) {
-				return cached.item
-			}
-			const item: FileManagerItem = {
-				kind: "folder",
-				id: node.id,
-				name: node.name,
-				parentId: node.parentId,
-				deleted: node.deleted,
-				deleteTime: node.deleteTime ?? null,
-				raw: node,
-			}
-			cache.set(cacheKey, { key, item })
-			return item
-		})
+	const handleToggleSidebar = useCallback(() => {
+		const panel = sidebarRef.current
+		if (!panel) return
+		if (panel.isCollapsed()) {
+			panel.expand()
+		} else {
+			panel.collapse()
+		}
+	}, [])
 
-		const fileRecords = fileQuery.data?.pages.flatMap((page) => page.content) ?? []
-		const files: FileManagerItem[] = fileRecords.map((file) => {
-			const cacheKey = `file:${file.id}`
-			const key = [
-				"file",
-				file.id,
-				file.fileName,
-				file.contentType,
-				file.objectSize ?? "",
-				file.createdTime ?? "",
-				file.deleted ? "1" : "0",
-				file.deleteTime ?? "",
-			].join("|")
-			nextKeys.add(cacheKey)
-			const cached = cache.get(cacheKey)
-			if (cached && cached.key === key) {
-				return cached.item
-			}
-			const item: FileManagerItem = {
-				kind: "file",
-				id: file.id,
-				name: file.fileName,
-				contentType: file.contentType,
-				objectSize: file.objectSize,
-				createdTime: file.createdTime,
-				deleted: file.deleted,
-				deleteTime: file.deleteTime ?? null,
-				raw: file,
-			}
-			cache.set(cacheKey, { key, item })
-			return item
-		})
+	const handleLocateCatalog = useCallback(() => {
+		let targetCatalogId = selectedCatalogId
 
-		for (const cacheKey of cache.keys()) {
-			if (!nextKeys.has(cacheKey)) {
-				cache.delete(cacheKey)
+		// If no catalog selected but we have a single selected file (e.g. in search results)
+		if (!targetCatalogId && selectedItems.length === 1 && selectedItems[0]?.kind === "file") {
+			const item = selectedItems[0]
+			// Use type guard or check property
+			if (item && "raw" in item && "catalogId" in (item.raw as any)) {
+				const cid = (item.raw as { catalogId: string }).catalogId
+				if (cid) {
+					targetCatalogId = cid
+					// Important: Update the view to show this catalog
+					setSelectedCatalogId(cid)
+					// Exit search scope if needed (assuming "active" scope for normal viewing)
+					setScopeStore("active")
+					startTransition(() => {
+						setCatalogId(cid)
+						setScope("active")
+					})
+				}
 			}
 		}
 
-		return [...folders, ...files]
-	}, [deferredCatalogId, treeNodes, fileQuery.data?.pages])
+		if (!targetCatalogId) return
 
-	const [selectedIds, setSelectedIds] = useState<string[]>([])
-	const [previewItem, setPreviewItem] = useState<FileManagerItem | null>(null)
-	const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-	const [moveTargets, setMoveTargets] = useState<Array<{ id: string; kind: "file" | "folder" }>>([])
-	const [targetCatalogId, setTargetCatalogId] = useState<string | null>(null)
-	const [dialogMode, setDialogMode] = useState<"create" | "rename" | null>(null)
-	const [dialogTarget, setDialogTarget] = useState<FileManagerItem | FileCatalog | null>(null)
-	const [confirmAction, setConfirmAction] = useState<{
-		title: string
-		description?: string
-		icon?: React.ReactNode
-		variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
-		confirmText?: string
-		onConfirm: () => Promise<void> | void
-	} | null>(null)
-
-	const deferredItems = useDeferredValue(items)
-	const deferredSelectedIds = useDeferredValue(selectedIds)
-
-	const [_isPending, startTransition] = useTransition()
-
-	useEffect(() => {
-		const nextScope: FileBrowserScope = urlScope === "recycle" ? "recycle" : "active"
-		if (nextScope !== scope) {
-			setScopeStore(nextScope)
+		// Ensure sidebar is expanded
+		if (sidebarRef.current?.isCollapsed()) {
+			sidebarRef.current.expand()
 		}
-	}, [scope, setScopeStore, urlScope])
 
-	useEffect(() => {
-		const nextCatalogId = normalizedCatalogId ?? null
-		if (nextCatalogId !== selectedCatalogId) {
-			setSelectedCatalogId(nextCatalogId)
-		}
-	}, [normalizedCatalogId, selectedCatalogId, setSelectedCatalogId])
+		// Trigger tree expansion via state
+		setLocateTrigger((prev) => prev + 1)
 
-	useEffect(() => {
-		const itemIds = new Set(deferredItems.map((item) => item.id))
-		startTransition(() => {
-			setSelectedIds((prev) => prev.filter((id) => itemIds.has(id)))
-		})
-	}, [deferredItems])
+		setTimeout(() => {
+			const element = document.querySelector(`[data-catalog-id="${targetCatalogId}"]`)
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth", block: "center" })
+				// Add a subtle flash effect
+				element.classList.add("bg-primary/20", "transition-colors", "duration-500")
+				setTimeout(() => element.classList.remove("bg-primary/20"), 1000)
+			}
+		}, 300)
+	}, [selectedCatalogId, selectedItems, setCatalogId, setSelectedCatalogId, startTransition, setScopeStore, setScope])
 
+	// 8. EventHandlers & Helpers
 	const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
 		if (isRecycleBin) {
 			return [{ id: null, name: "回收站" }]
@@ -259,369 +223,6 @@ export function FileManagerPage() {
 		return new Set(path?.map((node) => node.id) ?? [])
 	}, [selectedCatalogId, treeNodes])
 
-	const selectedItems = useMemo(() => {
-		const map = new Map(deferredItems.map((item) => [item.id, item]))
-		return deferredSelectedIds
-			.map((id) => map.get(id))
-			.filter((item): item is FileManagerItem => Boolean(item))
-	}, [deferredItems, deferredSelectedIds])
-
-	useEffect(() => {
-		setSelectedIds([])
-	}, [])
-
-	const { startUploads, pauseUpload, cancelUpload, resumeUpload } = useFileUploadManager({
-		bizType,
-		catalogId: selectedCatalogId,
-		onCompleted: () => {
-			void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-		},
-	})
-
-	const uploadFileInputRef = useRef<HTMLInputElement | null>(null)
-	const uploadFolderInputRef = useRef<HTMLInputElement | null>(null)
-
-	useEffect(() => {
-		if (uploadFolderInputRef.current) {
-			uploadFolderInputRef.current.setAttribute("webkitdirectory", "true")
-		}
-	}, [])
-
-	const handleUploadFiles = useCallback(
-		(files: File[]) => {
-			if (isRecycleBin || files.length === 0) return
-			startUploads(files, selectedCatalogId)
-		},
-		[isRecycleBin, selectedCatalogId, startUploads],
-	)
-
-	const handleOpenItem = useCallback(
-		(item: FileManagerItem) => {
-			if (item.kind === "folder") {
-				setSelectedCatalogId(item.id)
-				startTransition(() => {
-					void setCatalogId(item.id)
-				})
-				return
-			}
-			setPreviewItem(item)
-		},
-		[setCatalogId, setSelectedCatalogId],
-	)
-
-	const handleDownloadItem = useCallback((item: FileManagerItem) => {
-		if (item.kind !== "file") return
-		const link = document.createElement("a")
-		link.href = getDownloadUrl(bizType, item.id)
-		link.download = item.name
-		link.click()
-	}, [])
-
-	const handleCopyLink = useCallback(async (item: FileManagerItem) => {
-		if (item.kind !== "file") return
-		if (!navigator.clipboard) {
-			toast.error("当前环境不支持复制链接")
-			return
-		}
-		await navigator.clipboard.writeText(getViewUrl(bizType, item.id))
-		toast.success("链接已复制")
-	}, [])
-
-	const handleDeleteItem = useCallback(
-		(item: FileManagerItem) => {
-			if (item.kind === "folder") {
-				void (async () => {
-					try {
-						const hasChildren = await fetchCheckCatalogHasChildren(bizType, item.id)
-						if (hasChildren) {
-							setConfirmAction({
-								title: "确认删除文件夹及其所有内容?",
-								description: "该文件夹包含子文件夹或文件，删除后将无法恢复。",
-								icon: <AlertTriangle className="size-6 text-red-600" />,
-								variant: "destructive",
-								confirmText: "强制删除",
-								onConfirm: async () => {
-									await fetchForceDeleteCatalog(bizType, item.id)
-									void refetchCatalogs()
-									void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-									toast.success("文件夹及其内容已删除")
-								},
-							})
-						} else {
-							await fetchDeleteCatalog(bizType, item.id)
-							void refetchCatalogs()
-							void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-							toast.success("文件夹已删除")
-						}
-					} catch (_error) {
-						toast.error("获取文件夹状态失败")
-					}
-				})()
-			} else {
-				setConfirmAction({
-					title: "确认删除文件?",
-					description: "该操作会将文件移入回收站。",
-					icon: <Trash2 className="size-6 text-red-600" />,
-					variant: "destructive",
-					confirmText: "删除",
-					onConfirm: async () => {
-						await fetchDeleteFile(bizType, item.id)
-						void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-						toast.success("文件已删除")
-					},
-				})
-			}
-		},
-		[queryClient, refetchCatalogs],
-	)
-
-	const handleRecoverItem = useCallback(
-		(item: FileManagerItem) => {
-			setConfirmAction({
-				title: "确认恢复?",
-				description: "将文件从回收站恢复到原目录。",
-				onConfirm: async () => {
-					if (item.kind === "folder") {
-						await fetchRecoveryCatalog(bizType, item.id)
-						void refetchCatalogs()
-					} else {
-						await fetchRecoveryFile(bizType, item.id)
-					}
-					void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-					toast.success("已恢复")
-				},
-			})
-		},
-		[queryClient, refetchCatalogs],
-	)
-
-	const handleHardDeleteItem = useCallback(
-		(item: FileManagerItem) => {
-			setConfirmAction({
-				title: "确认彻底删除?",
-				description: "此操作无法撤销。",
-				icon: <Trash2 className="size-6 text-red-600" />,
-				variant: "destructive",
-				confirmText: "删除",
-				onConfirm: async () => {
-					if (item.kind === "folder") {
-						await fetchHardDeleteCatalog(bizType, item.id)
-						void refetchCatalogs()
-					} else {
-						await fetchHardDeleteFile(bizType, item.id)
-					}
-					void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-					toast.success("已删除")
-				},
-			})
-		},
-		[queryClient, refetchCatalogs],
-	)
-
-	const handleBatchDelete = useCallback(() => {
-		if (selectedItems.length === 0) return
-		setConfirmAction({
-			title: "确认批量删除?",
-			description: "选中文件将进入回收站。",
-			icon: <Trash2 className="size-6 text-red-600" />,
-			variant: "destructive",
-			confirmText: "删除",
-			onConfirm: async () => {
-				const files = selectedItems.filter((item) => item.kind === "file").map((item) => item.id)
-				const folders = selectedItems
-					.filter((item) => item.kind === "folder")
-					.map((item) => item.id)
-				if (files.length > 0) {
-					await fetchBatchDeleteFile(bizType, files)
-				}
-				for (const id of folders) {
-					await fetchDeleteCatalog(bizType, id)
-				}
-				void refetchCatalogs()
-				void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-				setSelectedIds([])
-				toast.success("已删除")
-			},
-		})
-	}, [selectedItems, queryClient, refetchCatalogs])
-
-	const handleBatchRecover = useCallback(() => {
-		if (selectedItems.length === 0) return
-		setConfirmAction({
-			title: "确认恢复?",
-			description: "选中项将被恢复。",
-			onConfirm: async () => {
-				const files = selectedItems.filter((item) => item.kind === "file").map((item) => item.id)
-				const folders = selectedItems
-					.filter((item) => item.kind === "folder")
-					.map((item) => item.id)
-				if (files.length > 0) {
-					await fetchBatchRecoveryFile(bizType, files)
-				}
-				for (const id of folders) {
-					await fetchRecoveryCatalog(bizType, id)
-				}
-				void refetchCatalogs()
-				void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-				setSelectedIds([])
-				toast.success("已恢复")
-			},
-		})
-	}, [selectedItems, queryClient, refetchCatalogs])
-
-	const handleBatchHardDelete = useCallback(() => {
-		if (selectedItems.length === 0) return
-		setConfirmAction({
-			title: "确认彻底删除?",
-			description: "此操作无法撤销。",
-			icon: <Trash2 className="size-6 text-red-600" />,
-			variant: "destructive",
-			confirmText: "删除",
-			onConfirm: async () => {
-				const files = selectedItems.filter((item) => item.kind === "file").map((item) => item.id)
-				const folders = selectedItems
-					.filter((item) => item.kind === "folder")
-					.map((item) => item.id)
-				if (files.length > 0) {
-					await fetchBatchHardDeleteFile(bizType, files)
-				}
-				for (const id of folders) {
-					await fetchHardDeleteCatalog(bizType, id)
-				}
-				void refetchCatalogs()
-				void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-				setSelectedIds([])
-				toast.success("已删除")
-			},
-		})
-	}, [selectedItems, queryClient, refetchCatalogs])
-
-	const handleClearRecycle = useCallback(() => {
-		setConfirmAction({
-			title: "确认清空回收站?",
-			description: "此操作无法撤销。",
-			icon: <Trash2 className="size-6 text-red-600" />,
-			variant: "destructive",
-			confirmText: "清空",
-			onConfirm: async () => {
-				await fetchClearRecycleBin(bizType)
-				void refetchCatalogs()
-				void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-				setSelectedIds([])
-				toast.success("回收站已清空")
-			},
-		})
-	}, [queryClient, refetchCatalogs])
-
-	const folderForm = useForm<z.infer<typeof FolderSchema>>({
-		resolver: zodResolver(FolderSchema),
-		defaultValues: { name: "" },
-	})
-
-	const handleSubmitFolder = useCallback(
-		async (values: z.infer<typeof FolderSchema>) => {
-			if (dialogMode === "create") {
-				const parentId =
-					dialogTarget && !("kind" in dialogTarget) ? dialogTarget.id : (selectedCatalogId ?? null)
-				const created = await fetchCreateCatalog(bizType, {
-					parentId,
-					name: values.name,
-				})
-				queryClient.setQueryData(
-					["fss-catalog-trees", bizType],
-					(
-						prev:
-							| { all: FileCatalog[]; active: FileCatalog[]; recycled: FileCatalog[] }
-							| undefined,
-					) => {
-						if (!prev) return prev
-						const insertNode = (nodes: FileCatalog[]): FileCatalog[] => {
-							if (!parentId) return [...nodes, created]
-							return nodes.map((node) => {
-								if (node.id === parentId) {
-									const nextChildren = [...(node.children ?? []), created]
-									return { ...node, children: nextChildren }
-								}
-								if (node.children && node.children.length > 0) {
-									return { ...node, children: insertNode(node.children) }
-								}
-								return node
-							})
-						}
-						return {
-							...prev,
-							all: insertNode(prev.all),
-							active: insertNode(prev.active),
-						}
-					},
-				)
-				toast.success("文件夹已创建")
-			}
-			if (dialogMode === "rename" && dialogTarget) {
-				if ("kind" in dialogTarget) {
-					if (dialogTarget.kind === "folder") {
-						await fetchRenameCatalog(bizType, dialogTarget.id, values.name)
-					} else {
-						await fetchRenameFile(bizType, dialogTarget.id, values.name)
-					}
-				} else {
-					await fetchRenameCatalog(bizType, dialogTarget.id, values.name)
-				}
-				toast.success("已重命名")
-			}
-			void refetchCatalogs()
-			void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-			setDialogMode(null)
-			setDialogTarget(null)
-			folderForm.reset()
-		},
-		[dialogMode, dialogTarget, folderForm, queryClient, refetchCatalogs, selectedCatalogId],
-	)
-
-	const handleOpenFolderDialog = useCallback(
-		(mode: "create" | "rename", target?: FileManagerItem | FileCatalog) => {
-			setDialogMode(mode)
-			setDialogTarget(target ?? null)
-			folderForm.reset({
-				name:
-					mode === "rename"
-						? target && "kind" in target
-							? target.name
-							: (target?.name ?? "")
-						: "",
-			})
-		},
-		[folderForm],
-	)
-
-	const handleMoveTargets = useCallback(
-		(targets: Array<{ id: string; kind: "file" | "folder" }>) => {
-			if (targets.length === 0) return
-			setMoveTargets(targets)
-			setTargetCatalogId(null)
-			setMoveDialogOpen(true)
-		},
-		[],
-	)
-
-	const handleConfirmMove = useCallback(async () => {
-		if (!targetCatalogId || moveTargets.length === 0) return
-		const fileIds = moveTargets.filter((item) => item.kind === "file").map((item) => item.id)
-		const folderIds = moveTargets.filter((item) => item.kind === "folder").map((item) => item.id)
-		if (fileIds.length > 0) {
-			await fetchBatchMoveFile(bizType, targetCatalogId, fileIds)
-		}
-		for (const id of folderIds) {
-			await fetchChangeCatalogParent(bizType, id, targetCatalogId)
-		}
-		void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-		void refetchCatalogs()
-		setMoveDialogOpen(false)
-		setMoveTargets([])
-		setTargetCatalogId(null)
-		toast.success("已移动")
-	}, [moveTargets, queryClient, targetCatalogId, refetchCatalogs])
-
 	const handleSelectCatalog = useCallback(
 		(id: string | null) => {
 			setSelectedCatalogId(id)
@@ -629,7 +230,7 @@ export function FileManagerPage() {
 				void setCatalogId(id)
 			})
 		},
-		[setCatalogId, setSelectedCatalogId],
+		[setCatalogId, setSelectedCatalogId, startTransition],
 	)
 
 	const handleToggleRecycle = useCallback(
@@ -641,96 +242,7 @@ export function FileManagerPage() {
 				void setCatalogId(null)
 			})
 		},
-		[setCatalogId, setScope, setScopeStore, setSelectedCatalogId],
-	)
-
-	const handleBatchMoveToCatalog = useCallback(
-		async (targetId: string, ids: string[]) => {
-			// Filter out items that are already in the target catalog to avoid redundant calls
-			// Though for folders, we need to check parentId matches targetId
-			const itemsToMove = deferredItems.filter((item) => ids.includes(item.id))
-			const fileIds = itemsToMove.filter((item) => item.kind === "file").map((item) => item.id)
-			const folderIds = itemsToMove
-				.filter((item) => item.kind === "folder" && item.id !== targetId)
-				.map((item) => item.id)
-
-			if (fileIds.length === 0 && folderIds.length === 0) return
-
-			try {
-				if (fileIds.length > 0) {
-					await fetchBatchMoveFile(bizType, targetId, fileIds)
-				}
-				for (const id of folderIds) {
-					await fetchChangeCatalogParent(bizType, id, targetId)
-				}
-				void refetchCatalogs()
-				void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-				toast.success("已移动")
-			} catch (_error) {
-				toast.error("移动失败")
-			}
-		},
-		[deferredItems, queryClient, refetchCatalogs],
-	)
-
-	const handleTreeAction = useCallback(
-		(
-			action: "create" | "rename" | "move" | "download" | "toggle-public" | "delete" | "refresh",
-			node: FileCatalog,
-		) => {
-			if (action === "create") handleOpenFolderDialog("create", node)
-			if (action === "rename") handleOpenFolderDialog("rename", node)
-			if (action === "move") {
-				handleMoveTargets([{ id: node.id, kind: "folder" }])
-			}
-			if (action === "download") {
-				toast.info("暂不支持下载文件夹")
-			}
-			if (action === "toggle-public") {
-				void (async () => {
-					const nextPublic = !node.public
-					await fetchUpdateCatalogPublic(bizType, node.id, nextPublic)
-					queryClient.setQueryData(
-						["fss-catalog-trees", bizType],
-						(
-							prev:
-								| { all: FileCatalog[]; active: FileCatalog[]; recycled: FileCatalog[] }
-								| undefined,
-						) => {
-							if (!prev) return prev
-							const updateNodes = (nodes: FileCatalog[]): FileCatalog[] =>
-								nodes.map((entry) => {
-									if (entry.id === node.id) return { ...entry, public: nextPublic }
-									if (entry.children && entry.children.length > 0) {
-										return { ...entry, children: updateNodes(entry.children) }
-									}
-									return entry
-								})
-							return {
-								...prev,
-								all: updateNodes(prev.all),
-								active: updateNodes(prev.active),
-								recycled: updateNodes(prev.recycled),
-							}
-						},
-					)
-					toast.success(nextPublic ? "已设为公开" : "已取消公开")
-				})()
-			}
-			if (action === "delete") {
-				handleDeleteItem({
-					kind: "folder",
-					id: node.id,
-					name: node.name,
-					parentId: node.parentId,
-					deleted: node.deleted,
-					deleteTime: node.deleteTime ?? null,
-					raw: node,
-				})
-			}
-			if (action === "refresh") void refetchCatalogs()
-		},
-		[handleDeleteItem, handleMoveTargets, handleOpenFolderDialog, queryClient, refetchCatalogs],
+		[setCatalogId, setScope, setScopeStore, setSelectedCatalogId, startTransition],
 	)
 
 	const handleToolbarRefresh = useCallback(() => {
@@ -745,29 +257,6 @@ export function FileManagerPage() {
 		[setViewMode],
 	)
 
-	const handleUploadFilesClick = useCallback(() => {
-		uploadFileInputRef.current?.click()
-	}, [])
-
-	const handleUploadFolderClick = useCallback(() => {
-		uploadFolderInputRef.current?.click()
-	}, [])
-
-	const handleCreateFolder = useCallback(() => {
-		handleOpenFolderDialog("create")
-	}, [handleOpenFolderDialog])
-
-	const handleDownloadSelected = useCallback(() => {
-		selectedItems.forEach(handleDownloadItem)
-	}, [handleDownloadItem, selectedItems])
-
-	const handleMoveSelected = useCallback(() => {
-		handleMoveTargets(
-			selectedItems
-				.filter((item) => item.kind === "file")
-				.map((item) => ({ id: item.id, kind: item.kind })),
-		)
-	}, [handleMoveTargets, selectedItems])
 	const handleBreadcrumbClick = useCallback(
 		(id: string | null) => {
 			void setCatalogId(id)
@@ -775,55 +264,20 @@ export function FileManagerPage() {
 		[setCatalogId],
 	)
 
-	const handleRenameItem = useCallback(
-		(item: FileManagerItem) => {
-			handleOpenFolderDialog("rename", item)
-		},
-		[handleOpenFolderDialog],
-	)
-
-	const handleMoveItem = useCallback(
-		(item: FileManagerItem) => {
-			handleMoveTargets([{ id: item.id, kind: item.kind }])
-		},
-		[handleMoveTargets],
-	)
-
 	const handleRefreshFiles = useCallback(() => {
 		void fileQuery.refetch()
 	}, [fileQuery])
-
-	const handleTriggerUpload = useCallback(() => {
-		uploadFileInputRef.current?.click()
-	}, [])
 
 	const handleLoadMore = useCallback(() => {
 		void fileQuery.fetchNextPage()
 	}, [fileQuery])
 
-	const handlePreviewUrl = useCallback((id: string) => getViewUrl(bizType, id), [])
-
-	const handleFileInputChange = useCallback(
-		(event: ChangeEvent<HTMLInputElement>) => {
-			const files = Array.from(event.target.files ?? [])
-			handleUploadFiles(files)
-			event.target.value = ""
+	const handlePreviewOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) setPreviewItem(null)
 		},
-		[handleUploadFiles],
+		[setPreviewItem],
 	)
-
-	const handleFolderInputChange = useCallback(
-		(event: ChangeEvent<HTMLInputElement>) => {
-			const files = Array.from(event.target.files ?? [])
-			handleUploadFiles(files)
-			event.target.value = ""
-		},
-		[handleUploadFiles],
-	)
-
-	const handlePreviewOpenChange = useCallback((open: boolean) => {
-		if (!open) setPreviewItem(null)
-	}, [])
 
 	const handleCancelUpload = useCallback(
 		(id: string, uploadId?: string) => {
@@ -834,45 +288,80 @@ export function FileManagerPage() {
 
 	const handleResumeUpload = useCallback(
 		(id: string, file: File, uploadId?: string, targetId?: string | null) => {
-			if (!uploadId) return
 			void resumeUpload(id, file, uploadId, targetId)
 		},
 		[resumeUpload],
 	)
 
+	const handleLocateUpload = useCallback(
+		(task: { fileId?: string; catalogId: string | null }) => {
+			if (!task.fileId) return
+			setPendingLocate({ fileId: task.fileId, catalogId: task.catalogId })
+			setSelectedCatalogId(task.catalogId)
+			startTransition(() => {
+				void setCatalogId(task.catalogId)
+			})
+		},
+		[setCatalogId, setSelectedCatalogId, startTransition],
+	)
+
+	useEffect(() => {
+		if (!pendingLocate) return
+		const match = deferredItems.find((item) => item.kind === "file" && item.id === pendingLocate.fileId)
+		if (match) {
+			setSelectedIds([match.id])
+			setPendingLocate(null)
+		}
+	}, [deferredItems, pendingLocate, setSelectedIds])
+
+	useEffect(() => {
+		const hasActiveUploads = uploadTasks.some(
+			(task) => task.status === "uploading" || task.status === "pending",
+		)
+		if (!hasActiveUploads) return
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault()
+			event.returnValue = ""
+		}
+		window.addEventListener("beforeunload", handleBeforeUnload)
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+	}, [uploadTasks])
+
+	const { getRootProps, isDragActive } = useDropzone({
+		onDrop: (acceptedFiles: File[]) => {
+			if (acceptedFiles.length === 0) return
+			handleUploadFiles(acceptedFiles)
+		},
+		noClick: true,
+		disabled: isRecycleBin,
+	})
+
 	const folderCount = deferredItems.filter((item) => item.kind === "folder").length
 	const totalFileCount = fileQuery.data?.pages[0]?.totalElements ?? 0
 	const fileSummary = folderCount + totalFileCount
 
-	const moveDisabledIds = useMemo(() => {
-		const folderTargets = moveTargets
-			.filter((item) => item.kind === "folder")
-			.map((item) => item.id)
-		if (folderTargets.length === 0) {
-			return selectedCatalogId ? [selectedCatalogId] : []
-		}
-		const disabled = new Set<string>()
-		const collectDescendants = (node: FileCatalog) => {
-			disabled.add(node.id)
-			for (const child of node.children ?? []) {
-				collectDescendants(child)
-			}
-		}
-		for (const id of folderTargets) {
-			const targetNode = findCatalogNode(treeNodes, id)
-			if (targetNode) collectDescendants(targetNode)
-		}
-		return Array.from(disabled)
-	}, [moveTargets, selectedCatalogId, treeNodes])
-
 	return (
-		<div className="bg-muted/20 p-4" style={{ minHeight: `calc(100vh - ${headerHeight}px)` }}>
+		<div
+			{...getRootProps({ className: "bg-muted/20 p-4" })}
+			style={{ minHeight: `calc(100vh - ${headerHeight}px)` }}
+		>
+			{isDragActive && !isRecycleBin && (
+				<div className="pointer-events-none fixed inset-0 z-40 border-2 border-dashed border-primary/40 bg-primary/5" />
+			)}
 			<div
 				className="h-full overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm"
 				style={{ height: `calc(100vh - ${headerHeight}px - 32px)` }}
 			>
 				<PanelGroup direction="horizontal">
-					<Panel defaultSize={24} minSize={18} maxSize={32}>
+					<Panel
+						ref={sidebarRef}
+						defaultSize={24}
+						minSize={18}
+						maxSize={32}
+						collapsible
+						onCollapse={() => setIsSidebarCollapsed(true)}
+						onExpand={() => setIsSidebarCollapsed(false)}
+					>
 						<FileSidebar
 							nodes={treeNodes}
 							selectedId={selectedCatalogId}
@@ -882,11 +371,19 @@ export function FileManagerPage() {
 							onToggleRecycle={handleToggleRecycle}
 							{...(!isRecycleBin
 								? {
-										onDropFilesToCatalog: handleBatchMoveToCatalog,
+										onDropFilesToCatalog: actions.handleBatchMoveToCatalog,
 									}
 								: {})}
-							onTreeAction={handleTreeAction}
+							onTreeAction={actions.handleTreeAction}
+							onLocate={handleLocateCatalog}
 							loading={catalogLoading}
+							locateTrigger={locateTrigger}
+							allowLocate={Boolean(
+								selectedCatalogId || (selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
+							)}
+							renamingId={actions.renamingContext === "tree" ? actions.renamingId : null}
+							onCancelRename={() => actions.setRenamingId(null)}
+							onConfirmRename={actions.handleConfirmRename}
 						/>
 					</Panel>
 					<PanelResizeHandle className="w-1 cursor-col-resize bg-transparent hover:bg-primary/10" />
@@ -901,14 +398,16 @@ export function FileManagerPage() {
 								selectedCount={selectedIds.length}
 								onUploadFiles={handleUploadFilesClick}
 								onUploadFolder={handleUploadFolderClick}
-								onCreateFolder={handleCreateFolder}
-								onDownloadSelected={handleDownloadSelected}
-								onMoveSelected={handleMoveSelected}
-								onDeleteSelected={handleBatchDelete}
-								onRecoverSelected={handleBatchRecover}
-								onHardDeleteSelected={handleBatchHardDelete}
-								onClearRecycle={handleClearRecycle}
+								onCreateFolder={actions.handleCreateFolder}
+								onDownloadSelected={actions.handleDownloadSelected}
+								onMoveSelected={actions.handleMoveSelected}
+								onDeleteSelected={actions.handleBatchDelete}
+								onRecoverSelected={actions.handleBatchRecover}
+								onHardDeleteSelected={actions.handleBatchHardDelete}
+								onClearRecycle={actions.handleClearRecycle}
 								onBreadcrumbClick={handleBreadcrumbClick}
+								sidebarVisible={!isSidebarCollapsed}
+								onToggleSidebar={handleToggleSidebar}
 							/>
 
 							{isRecycleBin && (
@@ -924,16 +423,16 @@ export function FileManagerPage() {
 									viewMode={viewMode === "grid" ? "grid" : "list"}
 									selectedIds={deferredSelectedIds}
 									onSelectionChange={setSelectedIds}
-									onOpenItem={handleOpenItem}
-									onRenameItem={handleRenameItem}
-									onMoveItem={handleMoveItem}
-									onMoveItemToCatalog={handleBatchMoveToCatalog}
-									onDeleteItem={handleDeleteItem}
-									onRecoverItem={handleRecoverItem}
-									onHardDeleteItem={handleHardDeleteItem}
-									onCopyLink={handleCopyLink}
-									onDownloadItem={handleDownloadItem}
-									onCreateFolder={handleCreateFolder}
+									onOpenItem={actions.handleOpenItem}
+									onRenameItem={actions.handleRenameItem}
+									onMoveItem={actions.handleMoveItem}
+									onMoveItemToCatalog={actions.handleBatchMoveToCatalog}
+									onDeleteItem={actions.handleDeleteItem}
+									onRecoverItem={actions.handleRecoverItem}
+									onHardDeleteItem={actions.handleHardDeleteItem}
+									onCopyLink={actions.handleCopyLink}
+									onDownloadItem={actions.handleDownloadItem}
+									onCreateFolder={actions.handleCreateFolder}
 									onRefresh={handleRefreshFiles}
 									onUploadFiles={handleUploadFiles}
 									onTriggerUpload={handleTriggerUpload}
@@ -942,7 +441,10 @@ export function FileManagerPage() {
 									isFetchingNextPage={fileQuery.isFetchingNextPage}
 									hasNextPage={fileQuery.hasNextPage}
 									onLoadMore={handleLoadMore}
-									getPreviewUrl={handlePreviewUrl}
+									getPreviewUrl={actions.handlePreviewUrl}
+									renamingId={actions.renamingContext === "list" ? actions.renamingId : null}
+									onCancelRename={() => actions.setRenamingId(null)}
+									onConfirmRename={actions.handleConfirmRename}
 								/>
 							</div>
 
@@ -964,7 +466,7 @@ export function FileManagerPage() {
 				onChange={handleFileInputChange}
 			/>
 			<input
-				ref={uploadFolderInputRef}
+				ref={setFolderInputRef}
 				type="file"
 				className="hidden"
 				multiple
@@ -975,49 +477,71 @@ export function FileManagerPage() {
 				item={previewItem}
 				open={Boolean(previewItem)}
 				onOpenChange={handlePreviewOpenChange}
-				getPreviewUrl={handlePreviewUrl}
-				onDownload={handleDownloadItem}
+				getPreviewUrl={actions.handlePreviewUrl}
+				onDownload={actions.handleDownloadItem}
 			/>
 
 			<FileUploadWidget
 				onPause={pauseUpload}
 				onCancel={handleCancelUpload}
 				onResume={handleResumeUpload}
+				onRetry={retryUpload}
+				onPauseAll={pauseAllUploads}
+				onResumeAll={resumeAllUploads}
+				onCancelAll={cancelAllUploads}
+				onLocate={handleLocateUpload}
 			/>
 
 			<FolderDialog
-				open={dialogMode !== null}
-				mode={dialogMode}
-				form={folderForm}
-				onSubmit={handleSubmitFolder}
+				open={actions.dialogMode !== null}
+				mode={actions.dialogMode}
+				form={actions.folderForm}
+				onSubmit={actions.handleSubmitFolder}
 				onOpenChange={(open) => {
 					if (!open) {
-						setDialogMode(null)
-						setDialogTarget(null)
+						actions.setDialogMode(null)
+						actions.setDialogTarget(null)
 					}
 				}}
 			/>
 
 			<MoveDialog
-				open={moveDialogOpen}
+				open={actions.moveDialogOpen}
 				onOpenChange={(open) => {
-					setMoveDialogOpen(open)
+					actions.setMoveDialogOpen(open)
 					if (!open) {
-						setMoveTargets([])
-						setTargetCatalogId(null)
+						actions.setMoveTargets([])
+						actions.setTargetCatalogId(null)
 					}
 				}}
 				nodes={catalogTrees?.active ?? []}
-				selectedId={targetCatalogId}
-				onSelect={setTargetCatalogId}
-				disabledIds={moveDisabledIds}
-				onConfirm={handleConfirmMove}
+				selectedId={actions.targetCatalogId}
+				onSelect={actions.setTargetCatalogId}
+				disabledIds={actions.moveDisabledIds}
+				onConfirm={actions.handleConfirmMove}
+			/>
+
+			<MoveDialog
+				open={uploadDialogOpen}
+				onOpenChange={(open) => {
+					setUploadDialogOpen(open)
+					if (!open) {
+						setPendingUploadFiles([])
+						setUploadTargetId(null)
+					}
+				}}
+				title="上传文件到"
+				nodes={catalogTrees?.active ?? []}
+				selectedId={uploadTargetId}
+				onSelect={setUploadTargetId}
+				disabledIds={[]}
+				onConfirm={handleConfirmUpload}
 			/>
 
 			<ConfirmDialog
-				action={confirmAction}
+				action={actions.confirmAction}
 				onOpenChange={(open) => {
-					if (!open) setConfirmAction(null)
+					if (!open) actions.setConfirmAction(null)
 				}}
 			/>
 		</div>

@@ -49,7 +49,7 @@ export function showUnauthorizedDialog(options: UnauthorizedDialogOptions = {}) 
 		const root = createRoot(container)
 		root.render(
 			<AlertDialog open={true}>
-				<AlertDialogContent className="w-100 px-8">
+				<AlertDialogContent className="w-100">
 					{/* Close button */}
 					<button
 						type="button"
