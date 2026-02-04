@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Trash2 } from "lucide-react"
 import { parseAsInteger, parseAsString, useQueryState, useQueryStates } from "nuqs"
-import {
+import React, {
 	type ChangeEvent,
 	useCallback,
 	useEffect,
@@ -24,10 +24,12 @@ import {
 	fetchBatchMoveFile,
 	fetchBatchRecoveryFile,
 	fetchChangeCatalogParent,
+	fetchCheckCatalogHasChildren,
 	fetchClearRecycleBin,
 	fetchCreateCatalog,
 	fetchDeleteCatalog,
 	fetchDeleteFile,
+	fetchForceDeleteCatalog,
 	fetchGetFileCatalogTrees,
 	fetchGetFileList,
 	fetchGetRecycleBinFileList,
@@ -251,24 +253,48 @@ export function FileManagerPage() {
 
 	const handleDeleteItem = useCallback(
 		(item: FileManagerItem) => {
-			setConfirmAction({
-				title: `确认删除${item.kind === "folder" ? "文件夹" : "文件"}?`,
-				description:
-					item.kind === "folder" ? "该操作会将文件夹移入回收站。" : "该操作会将文件移入回收站。",
-				icon: <Trash2 className="size-6 text-red-600" />,
-				variant: "destructive",
-				confirmText: "删除",
-				onConfirm: async () => {
-					if (item.kind === "folder") {
-						await fetchDeleteCatalog(bizType, item.id)
-						void refetchCatalogs()
-					} else {
-						await fetchDeleteFile(bizType, item.id)
+			if (item.kind === "folder") {
+				void (async () => {
+					try {
+						const hasChildren = await fetchCheckCatalogHasChildren(bizType, item.id)
+						if (hasChildren) {
+							setConfirmAction({
+								title: "确认删除文件夹及其所有内容?",
+								description: "该文件夹包含子文件夹或文件，删除后将无法恢复。",
+								icon: <AlertTriangle className="size-6 text-red-600" />,
+								variant: "destructive",
+								confirmText: "强制删除",
+								onConfirm: async () => {
+									await fetchForceDeleteCatalog(bizType, item.id)
+									void refetchCatalogs()
+									void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
+									toast.success("文件夹及其内容已删除")
+								},
+							})
+						} else {
+							await fetchDeleteCatalog(bizType, item.id)
+							void refetchCatalogs()
+							void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
+							toast.success("文件夹已删除")
+						}
+					} catch (_error) {
+						toast.error("获取文件夹状态失败")
 					}
-					void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
-					toast.success("已删除")
-				},
-			})
+				})()
+			} else {
+				setConfirmAction({
+					title: "确认删除文件?",
+					description: "该操作会将文件移入回收站。",
+					icon: <Trash2 className="size-6 text-red-600" />,
+					variant: "destructive",
+					confirmText: "删除",
+					onConfirm: async () => {
+						await fetchDeleteFile(bizType, item.id)
+						void queryClient.invalidateQueries({ queryKey: ["fss-files", bizType] })
+						toast.success("文件已删除")
+					},
+				})
+			}
 		},
 		[queryClient, refetchCatalogs],
 	)
