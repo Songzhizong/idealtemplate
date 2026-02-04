@@ -21,6 +21,9 @@ interface FileBrowserPaneProps extends FileBrowserItemActionHandlers {
 	onLoadMore?: () => void
 	onMoveItemToCatalog: (targetId: string, ids: string[]) => void
 	getPreviewUrl: (id: string) => string
+	renamingId?: string | null
+	onConfirmRename?: (id: string, name: string, kind: "file" | "folder") => Promise<void>
+	onCancelRename?: () => void
 }
 
 export const FileBrowserPane = memo(function FileBrowserPane(props: FileBrowserPaneProps) {

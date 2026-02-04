@@ -9,8 +9,10 @@ export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "")
 	// 从环境变量读取后端地址，如果没有配置则使用默认值
 	const backendUrl = env.VITE_API_BASE_URL || "http://localhost:5678"
+	const baseUrl = env.VITE_BASE_URL || "/"
 
 	return {
+		base: baseUrl,
 		plugins: [tanstackRouter(), react(), tailwindcss()],
 		resolve: {
 			alias: {

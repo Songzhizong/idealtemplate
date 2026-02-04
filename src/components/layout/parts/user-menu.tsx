@@ -65,7 +65,7 @@ export function UserMenu() {
 			</DropdownMenuContent>
 
 			<AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-				<AlertDialogContent>
+				<AlertDialogContent className="w-100">
 					<AlertDialogHeader>
 						<AlertDialogTitle>确认退出 ?</AlertDialogTitle>
 						<AlertDialogDescription>您确定要退出登录吗？</AlertDialogDescription>

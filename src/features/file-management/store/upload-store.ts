@@ -16,6 +16,7 @@ export interface UploadTask {
 	uploadId?: string
 	fileHash?: string
 	distinctId?: string
+	fileId?: string
 	fileName: string
 	fileSize: number
 	uploadedBytes: number
@@ -23,8 +24,11 @@ export interface UploadTask {
 	status: UploadStatus
 	speed: number | null
 	catalogId: string | null
+	targetPath: string | null
 	createdTime: number
+	finishedTime: number | null
 	errorMessage: string | null
+	etags: { partNumber: number; eTag: string }[]
 }
 
 interface UploadStoreState {
@@ -39,9 +43,13 @@ interface UploadStoreState {
 	) => void
 	setUploadStatus: (id: string, status: UploadStatus, errorMessage?: string) => void
 	setUploadId: (id: string, uploadId: string) => void
+	setUploadFileId: (id: string, fileId: string) => void
+	addETag: (id: string, etag: { partNumber: number; eTag: string }) => void
 	removeUploadTask: (id: string) => void
 	clearCompletedTasks: () => void
+	removeCompletedTasksOlderThan: (timestamp: number) => void
 	toggleUploadWidget: () => void
+	setUploadWidgetExpanded: (expanded: boolean) => void
 }
 
 export const useUploadStore = create<UploadStoreState>()(
@@ -69,13 +77,33 @@ export const useUploadStore = create<UploadStoreState>()(
 			setUploadStatus: (id, status, errorMessage) =>
 				set((state) => ({
 					uploadTasks: state.uploadTasks.map((task) =>
-						task.id === id ? { ...task, status, errorMessage: errorMessage ?? null } : task,
+						task.id === id
+							? {
+									...task,
+									status,
+									errorMessage: errorMessage ?? null,
+									finishedTime:
+										status === "completed" || status === "failed" ? Date.now() : null,
+								}
+							: task,
 					),
 				})),
 			setUploadId: (id, uploadId) =>
 				set((state) => ({
 					uploadTasks: state.uploadTasks.map((task) =>
-						task.id === id ? { ...task, uploadId } : task,
+						task.id === id ? { ...task, uploadId, etags: task.etags || [] } : task,
+					),
+				})),
+			setUploadFileId: (id, fileId) =>
+				set((state) => ({
+					uploadTasks: state.uploadTasks.map((task) =>
+						task.id === id ? { ...task, fileId } : task,
+					),
+				})),
+			addETag: (id, etag) =>
+				set((state) => ({
+					uploadTasks: state.uploadTasks.map((task) =>
+						task.id === id ? { ...task, etags: [...(task.etags || []), etag] } : task,
 					),
 				})),
 			removeUploadTask: (id) =>
@@ -84,13 +112,23 @@ export const useUploadStore = create<UploadStoreState>()(
 				})),
 			clearCompletedTasks: () =>
 				set((state) => ({
-					uploadTasks: state.uploadTasks.filter(
-						(task) => task.status !== "completed" && task.status !== "failed",
-					),
+					uploadTasks: state.uploadTasks.filter((task) => task.status !== "completed"),
+				})),
+			removeCompletedTasksOlderThan: (timestamp) =>
+				set((state) => ({
+					uploadTasks: state.uploadTasks.filter((task) => {
+						if (task.status !== "completed") return true
+						if (!task.finishedTime) return true
+						return task.finishedTime > timestamp
+					}),
 				})),
 			toggleUploadWidget: () =>
 				set((state) => ({
 					isUploadWidgetExpanded: !state.isUploadWidgetExpanded,
+				})),
+			setUploadWidgetExpanded: (expanded) =>
+				set(() => ({
+					isUploadWidgetExpanded: expanded,
 				})),
 		}),
 		{
@@ -102,14 +140,18 @@ export const useUploadStore = create<UploadStoreState>()(
 			onRehydrateStorage: () => (state) => {
 				if (!state) return
 				state.uploadTasks = state.uploadTasks.map((task) => {
-					if (
-						task.status === "uploading" ||
-						task.status === "pending" ||
-						task.status === "paused"
-					) {
-						return { ...task, status: "interrupted" }
+					const nextTask = {
+						...task,
+						targetPath: task.targetPath ?? "/",
 					}
-					return task
+					if (
+						nextTask.status === "uploading" ||
+						nextTask.status === "pending" ||
+						nextTask.status === "paused"
+					) {
+						return { ...nextTask, status: "interrupted" }
+					}
+					return nextTask
 				})
 			},
 		},

@@ -84,6 +84,7 @@ interface MoveDialogProps {
 	onSelect: (id: string | null) => void
 	disabledIds: string[]
 	onConfirm: () => void
+	title?: string
 }
 
 export function MoveDialog({
@@ -94,12 +95,13 @@ export function MoveDialog({
 	onSelect,
 	disabledIds,
 	onConfirm,
+	title = "移动到",
 }: MoveDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>移动到</DialogTitle>
+					<DialogTitle>{title}</DialogTitle>
 				</DialogHeader>
 				<div className="max-h-80 overflow-y-auto rounded-lg border border-border/30 p-2">
 					<FileManagerTree
