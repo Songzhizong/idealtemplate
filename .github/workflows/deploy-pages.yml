@@ -37,6 +37,8 @@ jobs:
 
       - name: Build
         run: pnpm run build-mock
+        env:
+          VITE_BASE_URL: /idealtemplate/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

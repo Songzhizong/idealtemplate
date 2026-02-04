@@ -12,6 +12,12 @@ export async function enableMocking() {
 	console.log("Starting MSW...")
 	await worker.start({
 		onUnhandledRequest: "bypass",
+		serviceWorker: {
+			url: `${import.meta.env.BASE_URL}mockServiceWorker.js`,
+			options: {
+				scope: import.meta.env.BASE_URL,
+			},
+		},
 	})
 	console.log("[MSW] Mocking enabled.")
 }
