@@ -140,18 +140,18 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 			<form onSubmit={form.handleSubmit(onLogin)} className="space-y-6">
 				{/* Phone Number */}
 				<div className="space-y-2">
-					<Label htmlFor="phone" className="text-gray-700 dark:text-gray-300">
+					<Label htmlFor="phone" className="text-foreground">
 						手机号
 					</Label>
 					<div className="relative">
-						<Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+						<Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
 						<Input
 							id="phone"
 							type="tel"
 							placeholder="请输入手机号"
 							autoComplete="tel"
 							{...form.register("phone")}
-							className="pl-11 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
+							className="pl-11 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-12 text-foreground"
 						/>
 					</div>
 					{form.formState.errors.phone && (
@@ -161,7 +161,7 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 
 				{/* SMS Code & Send Button Merged */}
 				<div className="space-y-2">
-					<Label htmlFor="code" className="text-gray-700 dark:text-gray-300">
+					<Label htmlFor="code" className="text-foreground">
 						验证码
 					</Label>
 					<div className="relative">
@@ -172,7 +172,7 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 							autoComplete="one-time-code"
 							maxLength={6}
 							{...form.register("code")}
-							className="pr-32 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
+							className="pr-32 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-12 text-foreground"
 						/>
 						<div className="absolute right-1 top-1 bottom-1">
 							<Button
@@ -198,10 +198,7 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 						checked={form.watch("rememberMe") ?? false}
 						onCheckedChange={(checked) => form.setValue("rememberMe", checked as boolean)}
 					/>
-					<Label
-						htmlFor="remember-sms"
-						className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-					>
+					<Label htmlFor="remember-sms" className="text-sm text-muted-foreground cursor-pointer">
 						记住我
 					</Label>
 				</div>
@@ -209,7 +206,7 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 				{/* Submit Button */}
 				<Button
 					type="submit"
-					className="w-full h-12 bg-linear-to-r from-[#2463EB] to-[#1e50c5] hover:from-[#1e50c5] hover:to-[#1a46ad] text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
+					className="w-full h-12 bg-linear-to-r from-primary to-primary/70 hover:from-primary/80 hover:to-primary text-primary-foreground font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
 					disabled={loginMutation.isPending}
 				>
 					{loginMutation.isPending ? "登录中..." : "立即登录"}
@@ -232,7 +229,7 @@ export function SmsLoginForm({ onResponse }: { onResponse?: (response: LoginResp
 								<Input
 									placeholder="请输入验证码"
 									autoComplete="off"
-									className="pr-32 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-11 text-gray-900 dark:text-gray-100"
+									className="pr-32 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-11 text-foreground"
 									{...captchaForm.register("captcha")}
 								/>
 								<div className="absolute right-1 top-1 bottom-1 w-28 overflow-hidden rounded-r-md border-l border-border bg-muted/50">

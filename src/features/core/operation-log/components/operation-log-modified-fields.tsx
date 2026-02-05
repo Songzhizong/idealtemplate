@@ -84,7 +84,7 @@ export function OperationLogModifiedFields({ modification }: OperationLogModifie
 								<TableCell className="align-top py-2">
 									{isModifiedField(field) ? (
 										field.displayValue || field.value ? (
-											<div className="min-h-7 rounded border border-red-200 bg-red-50 px-2 py-1 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+											<div className="min-h-7 rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-sm text-destructive">
 												{field.displayValue || field.value}
 											</div>
 										) : (
@@ -99,7 +99,7 @@ export function OperationLogModifiedFields({ modification }: OperationLogModifie
 								<TableCell className="align-top py-2">
 									{isModifiedField(field) ? (
 										field.displayModifiedValue || field.modifiedValue ? (
-											<div className="min-h-7 rounded border border-green-200 bg-green-50 px-2 py-1 text-sm text-green-900 dark:border-green-900/40 dark:bg-green-900/20 dark:text-green-300">
+											<div className="min-h-7 rounded border border-success/30 bg-success/10 px-2 py-1 text-sm text-success">
 												{field.displayModifiedValue || field.modifiedValue}
 											</div>
 										) : (

@@ -221,10 +221,10 @@ export function SecuritySettings() {
 	}
 
 	const getStrengthColor = () => {
-		if (passwordStrength >= 75) return "bg-green-500"
-		if (passwordStrength >= 50) return "bg-yellow-500"
-		if (passwordStrength >= 25) return "bg-orange-500"
-		return "bg-red-500"
+		if (passwordStrength >= 75) return "bg-success"
+		if (passwordStrength >= 50) return "bg-warning"
+		if (passwordStrength >= 25) return "bg-info"
+		return "bg-destructive"
 	}
 
 	const getStrengthText = () => {
@@ -398,7 +398,7 @@ export function SecuritySettings() {
 											</AlertDialogHeader>
 											<div className="flex flex-col items-center justify-center gap-6 py-4">
 												{qrCodeBase64 ? (
-													<div className="rounded-lg bg-white p-2 border border-border">
+													<div className="rounded-lg bg-background p-2 border border-border">
 														<img src={qrCodeBase64} alt="TOTP QR Code" className="size-48" />
 													</div>
 												) : (
@@ -475,18 +475,18 @@ export function SecuritySettings() {
 
 						<div className="space-y-4">
 							{totpStatus?.exists && !recoveryCodeStatus?.exists && (
-								<div className="flex items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-900/20 dark:text-orange-300">
+								<div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning-subtle p-3 text-sm text-warning">
 									<AlertCircle className="size-5 shrink-0" />
 									<div className="flex-1">
 										<p className="font-medium">建议开启恢复代码</p>
-										<p className="text-orange-700/80 dark:text-orange-400/80">
+										<p className="text-warning/80">
 											你已启用身份验证器，建议生成恢复代码以防无法访问验证设备。
 										</p>
 									</div>
 									<Button
 										variant="outline"
 										size="sm"
-										className="border-orange-200 bg-white hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950 dark:hover:bg-orange-900"
+										className="border-warning/30 bg-background hover:bg-warning/10"
 										onClick={handleGenerateRecoveryCodes}
 										disabled={generateRecoveryCodesMutation.isPending}
 									>

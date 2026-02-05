@@ -128,15 +128,15 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 			<button
 				type="button"
 				onClick={onBack}
-				className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-[#2463EB] transition-colors gap-1 group"
+				className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors gap-1 group"
 			>
 				<ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
 				返回登录
 			</button>
 
 			<div className="text-center">
-				<h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">双重身份验证</h3>
-				<p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+				<h3 className="text-xl font-bold text-foreground">双重身份验证</h3>
+				<p className="text-sm text-muted-foreground mt-1">
 					为了您的账户安全，请使用以下方式验证您的身份
 				</p>
 			</div>
@@ -148,14 +148,14 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 					className="w-full"
 				>
 					<TabsList
-						className="grid w-full h-11 bg-gray-200/40 dark:bg-gray-800/60 p-1 rounded-2xl backdrop-blur-sm"
+						className="grid w-full h-11 bg-muted/50 p-1 rounded-2xl backdrop-blur-sm"
 						style={{ gridTemplateColumns: `repeat(${ticket.methods.length}, 1fr)` }}
 					>
 						{ticket.methods.map((method) => (
 							<TabsTrigger
 								key={method}
 								value={method}
-								className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg dark:data-[state=active]:bg-gray-700 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 rounded-xl transition-all duration-200"
+								className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-foreground/10 data-[state=inactive]:text-muted-foreground rounded-xl transition-all duration-200"
 							>
 								{getMethodIcon(method)}
 								<span className="hidden sm:inline">{getMethodLabel(method)}</span>
@@ -173,7 +173,7 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 											type="button"
 											variant="outline"
 											size="sm"
-											className="rounded-full px-6 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60"
+											className="rounded-full px-6 bg-background/60 border-border/60"
 											onClick={() => handleSendCode(method)}
 											disabled={
 												countdown > 0 || sendSmsMutation.isPending || sendEmailMutation.isPending
@@ -189,10 +189,7 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 								)}
 
 								<div className="space-y-2 p-0.5">
-									<Label
-										htmlFor={`mfa-code-${method}`}
-										className="text-gray-700 dark:text-gray-300"
-									>
+									<Label htmlFor={`mfa-code-${method}`} className="text-foreground">
 										{method === FactorType.TOTP
 											? "请输入身份验证器上的6位动态码"
 											: method === FactorType.RECOVERY_CODE
@@ -206,7 +203,7 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 											autoComplete="one-time-code"
 											maxLength={method === FactorType.RECOVERY_CODE ? undefined : 6}
 											{...form.register("code")}
-											className="h-12 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors rounded-2xl text-center text-lg tracking-widest font-mono"
+											className="h-12 bg-background/60 border-border/60 focus:bg-background/80 transition-colors rounded-2xl text-center text-lg tracking-widest font-mono"
 										/>
 									</div>
 									{form.formState.errors.code && (
@@ -220,15 +217,15 @@ export function MfaForm({ ticket, onSuccess, onBack }: MfaFormProps) {
 
 				<Button
 					type="submit"
-					className="w-full h-12 bg-linear-to-r from-[#2463EB] to-[#1e50c5] hover:from-[#1e50c5] hover:to-[#1a46ad] text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
+					className="w-full h-12 bg-linear-to-r from-primary to-primary/70 hover:from-primary/80 hover:to-primary text-primary-foreground font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
 					disabled={mfaMutation.isPending}
 				>
 					{mfaMutation.isPending ? "验证中..." : "确 认"}
 				</Button>
 			</form>
 
-			<div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl p-3">
-				<p className="text-[11px] text-blue-600 dark:text-blue-400 flex items-start gap-2 leading-relaxed text-center justify-center">
+			<div className="bg-info-subtle border border-info/30 rounded-xl p-3">
+				<p className="text-[11px] text-info flex items-start gap-2 leading-relaxed text-center justify-center">
 					为了您的账户安全，请勿将验证码泄露给他人。
 				</p>
 			</div>

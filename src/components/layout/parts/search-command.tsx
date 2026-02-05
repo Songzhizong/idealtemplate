@@ -95,7 +95,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 		<div className="fixed inset-0 z-50 flex items-start justify-center px-4 py-12">
 			<button
 				type="button"
-				className="fixed inset-0 bg-black/50"
+				className="fixed inset-0 bg-overlay/50"
 				onClick={() => onOpenChange(false)}
 				aria-label="Close search"
 			/>

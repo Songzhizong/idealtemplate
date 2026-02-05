@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff, Lock, Mail, RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { BaseLink } from "@/components/common/base-link"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -87,17 +88,17 @@ export function PasswordLoginForm({
 		<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 			{/* Username */}
 			<div className="space-y-2">
-				<Label htmlFor="username" className="text-gray-700 dark:text-gray-300">
+				<Label htmlFor="username" className="text-foreground">
 					邮箱地址
 				</Label>
 				<div className="relative">
-					<Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+					<Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
 					<Input
 						id="username"
 						placeholder="your.email@example.com"
 						autoComplete="username"
 						{...form.register("username")}
-						className="pl-11 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
+						className="pl-11 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-12 text-foreground"
 					/>
 				</div>
 				{form.formState.errors.username && (
@@ -107,23 +108,23 @@ export function PasswordLoginForm({
 
 			{/* Password */}
 			<div className="space-y-2">
-				<Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+				<Label htmlFor="password" className="text-foreground">
 					密码
 				</Label>
 				<div className="relative">
-					<Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+					<Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
 					<Input
 						id="password"
 						type={showPassword ? "text" : "password"}
 						placeholder="请输入您的密码"
 						autoComplete="current-password"
 						{...form.register("password")}
-						className="pl-11 pr-11 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
+						className="pl-11 pr-11 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-12 text-foreground"
 					/>
 					<button
 						type="button"
 						onClick={() => setShowPassword(!showPassword)}
-						className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+						className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
 					>
 						{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
 					</button>
@@ -136,7 +137,7 @@ export function PasswordLoginForm({
 			{/* Captcha */}
 			{needCaptcha && (
 				<div className="space-y-2">
-					<Label htmlFor="captcha" className="text-gray-700 dark:text-gray-300">
+					<Label htmlFor="captcha" className="text-foreground">
 						验证码
 					</Label>
 					<div className="relative">
@@ -144,7 +145,7 @@ export function PasswordLoginForm({
 							id="captcha"
 							placeholder="请输入验证码"
 							autoComplete="off"
-							className="pr-32 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 focus:bg-white/80 dark:focus:bg-gray-800/80 transition-colors h-12 text-gray-900 dark:text-gray-100"
+							className="pr-32 bg-background/60 border-border/60 focus:bg-background/80 transition-colors h-12 text-foreground"
 							{...form.register("captcha")}
 						/>
 						<div className="absolute right-1 top-1 bottom-1 w-32 overflow-hidden rounded-r-md border-l border-border bg-muted/50">
@@ -183,25 +184,22 @@ export function PasswordLoginForm({
 						checked={rememberMe}
 						onCheckedChange={(checked) => setRememberMe(checked as boolean)}
 					/>
-					<Label
-						htmlFor="remember"
-						className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-					>
+					<Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
 						记住我
 					</Label>
 				</div>
-				<a
-					href="/forgot-password"
-					className="text-sm text-[#2463EB] dark:text-[#3b7bff] hover:text-[#1e50c5] dark:hover:text-[#2463EB] font-medium"
+				<BaseLink
+					to="/forgot-password"
+					className="text-sm text-primary hover:text-primary/80 font-medium"
 				>
 					忘记密码?
-				</a>
+				</BaseLink>
 			</div>
 
 			{/* Submit Button */}
 			<Button
 				type="submit"
-				className="w-full h-12 bg-linear-to-r from-[#2463EB] to-[#1e50c5] hover:from-[#1e50c5] hover:to-[#1a46ad] text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
+				className="w-full h-12 bg-linear-to-r from-primary to-primary/70 hover:from-primary/80 hover:to-primary text-primary-foreground font-semibold text-base shadow-lg hover:shadow-xl transition-all rounded-2xl"
 				disabled={loginMutation.isPending}
 			>
 				{loginMutation.isPending ? "登录中..." : "立即登录"}

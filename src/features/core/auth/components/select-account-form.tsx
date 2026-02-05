@@ -88,7 +88,7 @@ export function SelectAccountForm({ ticket, onSuccess, onBack }: SelectAccountFo
 								"w-full p-4 rounded-2xl border transition-all text-left flex items-start gap-4",
 								selectedUid === account.uid
 									? "border-primary bg-primary/5 ring-1 ring-primary"
-									: "border-border/60 bg-white/40 dark:bg-gray-800/40 hover:bg-white/60 dark:hover:bg-gray-800/60",
+									: "border-border/60 bg-background/40 hover:bg-background/60",
 							)}
 						>
 							<Avatar className="h-12 w-12 border-2 border-background shadow-sm">

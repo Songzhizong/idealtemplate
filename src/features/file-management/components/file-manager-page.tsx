@@ -4,12 +4,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
-import {
-	type ImperativePanelHandle,
-	Panel,
-	PanelGroup,
-	PanelResizeHandle,
-} from "react-resizable-panels"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 
 import { useThemeStore } from "@/hooks/use-theme-store"
 import { FILE_MANAGER_BIZ_TYPE } from "../config"
@@ -24,6 +19,7 @@ import { useUploadStore } from "../store/upload-store"
 import { FileBrowserPane } from "./file-browser-pane"
 import { ConfirmDialog, FolderDialog, MoveDialog } from "./file-manager-dialogs"
 import { findCatalogPath } from "./file-manager-helpers"
+import { FileManagerLayout } from "./file-manager-layout"
 import { FilePreviewDialog } from "./file-preview-dialog"
 import { FileSidebar } from "./file-sidebar"
 import { type BreadcrumbItem, FileToolbar } from "./file-toolbar"
@@ -367,110 +363,98 @@ export function FileManagerPage() {
 			{isDragActive && !isRecycleBin && (
 				<div className="pointer-events-none fixed inset-0 z-40 border-2 border-dashed border-primary/40 bg-primary/5" />
 			)}
-			<div
-				className="h-full overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm"
-				style={{ height: `calc(100vh - ${headerHeight}px - 32px)` }}
+			<FileManagerLayout
+				sidebar={
+					<FileSidebar
+						nodes={treeNodes}
+						selectedId={selectedCatalogId}
+						pathIds={pathIds}
+						isRecycleBin={isRecycleBin}
+						onSelectCatalog={handleSelectCatalog}
+						onToggleRecycle={handleToggleRecycle}
+						{...(!isRecycleBin
+							? {
+									onDropFilesToCatalog: actions.handleBatchMoveToCatalog,
+								}
+							: {})}
+						onTreeAction={actions.handleTreeAction}
+						onLocate={handleLocateCatalog}
+						loading={catalogLoading}
+						locateTrigger={locateTrigger}
+						allowLocate={Boolean(
+							selectedCatalogId ||
+								(selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
+						)}
+					/>
+				}
+				sidebarRef={sidebarRef}
+				onCollapse={() => setIsSidebarCollapsed(true)}
+				onExpand={() => setIsSidebarCollapsed(false)}
 			>
-				<PanelGroup direction="horizontal">
-					<Panel
-						ref={sidebarRef}
-						defaultSize={24}
-						minSize={18}
-						maxSize={32}
-						collapsible
-						onCollapse={() => setIsSidebarCollapsed(true)}
-						onExpand={() => setIsSidebarCollapsed(false)}
-					>
-						<FileSidebar
-							nodes={treeNodes}
-							selectedId={selectedCatalogId}
-							pathIds={pathIds}
-							isRecycleBin={isRecycleBin}
-							onSelectCatalog={handleSelectCatalog}
-							onToggleRecycle={handleToggleRecycle}
-							{...(!isRecycleBin
-								? {
-										onDropFilesToCatalog: actions.handleBatchMoveToCatalog,
-									}
-								: {})}
-							onTreeAction={actions.handleTreeAction}
-							onLocate={handleLocateCatalog}
-							loading={catalogLoading}
-							locateTrigger={locateTrigger}
-							allowLocate={Boolean(
-								selectedCatalogId ||
-									(selectedItems.length === 1 && selectedItems[0]?.kind === "file"),
-							)}
-						/>
-					</Panel>
-					<PanelResizeHandle className="w-1 cursor-col-resize bg-transparent hover:bg-primary/10" />
-					<Panel>
-						<div className="flex h-full flex-col">
-							<FileToolbar
-								breadcrumbs={breadcrumbs}
-								onRefresh={handleToolbarRefresh}
-								isRecycleBin={isRecycleBin}
-								viewMode={viewMode === "grid" ? "grid" : "list"}
-								onViewModeChange={handleViewModeChange}
-								selectedCount={selectedIds.length}
-								onUploadFiles={handleUploadFilesClick}
-								onUploadFolder={handleUploadFolderClick}
-								onCreateFolder={actions.handleCreateFolder}
-								onDownloadSelected={actions.handleDownloadSelected}
-								onMoveSelected={actions.handleMoveSelected}
-								onDeleteSelected={actions.handleBatchDelete}
-								onRecoverSelected={actions.handleBatchRecover}
-								onHardDeleteSelected={actions.handleBatchHardDelete}
-								onClearRecycle={actions.handleClearRecycle}
-								onBreadcrumbClick={handleBreadcrumbClick}
-								sidebarVisible={!isSidebarCollapsed}
-								onToggleSidebar={handleToggleSidebar}
-							/>
+				<div className="flex h-full flex-col">
+					<FileToolbar
+						breadcrumbs={breadcrumbs}
+						onRefresh={handleToolbarRefresh}
+						isRecycleBin={isRecycleBin}
+						viewMode={viewMode === "grid" ? "grid" : "list"}
+						onViewModeChange={handleViewModeChange}
+						selectedCount={selectedIds.length}
+						onUploadFiles={handleUploadFilesClick}
+						onUploadFolder={handleUploadFolderClick}
+						onCreateFolder={actions.handleCreateFolder}
+						onDownloadSelected={actions.handleDownloadSelected}
+						onMoveSelected={actions.handleMoveSelected}
+						onDeleteSelected={actions.handleBatchDelete}
+						onRecoverSelected={actions.handleBatchRecover}
+						onHardDeleteSelected={actions.handleBatchHardDelete}
+						onClearRecycle={actions.handleClearRecycle}
+						onBreadcrumbClick={handleBreadcrumbClick}
+						sidebarVisible={!isSidebarCollapsed}
+						onToggleSidebar={handleToggleSidebar}
+					/>
 
-							{isRecycleBin && (
-								<div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-border/30 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-									<AlertTriangle className="size-4 text-primary" />
-									回收站中的文件将在 30 天后自动清除
-								</div>
-							)}
-
-							<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-								<FileBrowserPane
-									items={deferredItems}
-									viewMode={viewMode === "grid" ? "grid" : "list"}
-									selectedIds={deferredSelectedIds}
-									onSelectionChange={setSelectedIds}
-									onOpenItem={actions.handleOpenItem}
-									onRenameItem={actions.handleRenameItem}
-									onMoveItem={actions.handleMoveItem}
-									onMoveItemToCatalog={actions.handleBatchMoveToCatalog}
-									onDeleteItem={actions.handleDeleteItem}
-									onRecoverItem={actions.handleRecoverItem}
-									onHardDeleteItem={actions.handleHardDeleteItem}
-									onCopyLink={actions.handleCopyLink}
-									onDownloadItem={actions.handleDownloadItem}
-									onCreateFolder={actions.handleCreateFolder}
-									onRefresh={handleRefreshFiles}
-									onUploadFiles={handleUploadFiles}
-									onTriggerUpload={handleTriggerUpload}
-									isRecycleBin={isRecycleBin}
-									loading={fileQuery.isLoading}
-									isFetchingNextPage={fileQuery.isFetchingNextPage}
-									hasNextPage={fileQuery.hasNextPage}
-									onLoadMore={handleLoadMore}
-									getPreviewUrl={actions.handlePreviewUrl}
-								/>
-							</div>
-
-							<div className="flex items-center justify-between border-t border-border/30 px-4 py-2 text-sm text-muted-foreground">
-								<span>
-									{fileSummary} 个项目 · 已选 {deferredSelectedIds.length} 项
-								</span>
-							</div>
+					{isRecycleBin && (
+						<div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-border/30 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+							<AlertTriangle className="size-4 text-primary" />
+							回收站中的文件将在 30 天后自动清除
 						</div>
-					</Panel>
-				</PanelGroup>
-			</div>
+					)}
+
+					<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+						<FileBrowserPane
+							items={deferredItems}
+							viewMode={viewMode === "grid" ? "grid" : "list"}
+							selectedIds={deferredSelectedIds}
+							onSelectionChange={setSelectedIds}
+							onOpenItem={actions.handleOpenItem}
+							onRenameItem={actions.handleRenameItem}
+							onMoveItem={actions.handleMoveItem}
+							onMoveItemToCatalog={actions.handleBatchMoveToCatalog}
+							onDeleteItem={actions.handleDeleteItem}
+							onRecoverItem={actions.handleRecoverItem}
+							onHardDeleteItem={actions.handleHardDeleteItem}
+							onCopyLink={actions.handleCopyLink}
+							onDownloadItem={actions.handleDownloadItem}
+							onCreateFolder={actions.handleCreateFolder}
+							onRefresh={handleRefreshFiles}
+							onUploadFiles={handleUploadFiles}
+							onTriggerUpload={handleTriggerUpload}
+							isRecycleBin={isRecycleBin}
+							loading={fileQuery.isLoading}
+							isFetchingNextPage={fileQuery.isFetchingNextPage}
+							hasNextPage={fileQuery.hasNextPage}
+							onLoadMore={handleLoadMore}
+							getPreviewUrl={actions.handlePreviewUrl}
+						/>
+					</div>
+
+					<div className="flex items-center justify-between border-t border-border/30 px-4 py-2 text-sm text-muted-foreground">
+						<span>
+							{fileSummary} 个项目 · 已选 {deferredSelectedIds.length} 项
+						</span>
+					</div>
+				</div>
+			</FileManagerLayout>
 
 			<input
 				ref={uploadFileInputRef}

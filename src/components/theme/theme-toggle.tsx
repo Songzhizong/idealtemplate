@@ -19,17 +19,17 @@ export function ThemeToggle() {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="rounded-full w-10 h-10 backdrop-blur-lg bg-white/40 dark:bg-gray-800/40 border border-white/60 dark:border-gray-700/60 hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-200"
+					className="rounded-full w-10 h-10 backdrop-blur-lg bg-background/40 border border-border/60 hover:bg-background/60 transition-all duration-200"
 				>
 					{resolvedTheme === "light" ? (
-						<Sun className="h-[1.2rem] w-[1.2rem] text-gray-800 dark:text-gray-200" />
+						<Sun className="h-[1.2rem] w-[1.2rem] text-foreground" />
 					) : (
-						<Moon className="h-[1.2rem] w-[1.2rem] text-gray-800 dark:text-gray-200" />
+						<Moon className="h-[1.2rem] w-[1.2rem] text-foreground" />
 					)}
 					<span className="sr-only">Toggle theme</span>
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="backdrop-blur-lg bg-white/80 dark:bg-gray-900/80">
+			<DropdownMenuContent align="end" className="backdrop-blur-lg bg-popover/80">
 				<DropdownMenuItem onClick={() => setTheme("light")} className="gap-2 cursor-pointer">
 					<Sun className="h-4 w-4" />
 					<span className="flex-1">亮色模式</span>

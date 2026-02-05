@@ -34,7 +34,8 @@ export function useColorHash(str: string, options: ColorHashOptions = {}) {
 
 	return useMemo(() => {
 		const colorIndex = getHashIndex(str, categoricalColors.length)
-		const baseColor = categoricalColors[colorIndex] || "#64748b"
+		const fallbackColor = "hsl(var(--muted-foreground))"
+		const baseColor = categoricalColors[colorIndex] || fallbackColor
 
 		// 默认透明度设置
 		const isDark = mode === "dark"
@@ -56,7 +57,7 @@ export function useColorHash(str: string, options: ColorHashOptions = {}) {
 		const borderOpacityHex = toHexOpacity(finalBorderOpacity)
 
 		const style: React.CSSProperties = {
-			color: variant === "solid" ? "#ffffff" : baseColor,
+			color: variant === "solid" ? "hsl(var(--primary-foreground))" : baseColor,
 			backgroundColor: variant === "solid" ? baseColor : `${baseColor}${bgOpacityHex}`,
 			borderColor: `${baseColor}${borderOpacityHex}`,
 		}

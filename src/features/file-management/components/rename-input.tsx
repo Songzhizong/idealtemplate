@@ -194,7 +194,7 @@ export function RenameInput({
 				)}
 			</div>
 			{error && (
-				<div className="absolute left-0 top-full z-50 mt-1 rounded bg-destructive/90 px-2 py-1 text-[10px] text-white shadow-md">
+				<div className="absolute left-0 top-full z-50 mt-1 rounded bg-destructive/90 px-2 py-1 text-[10px] text-destructive-foreground shadow-md">
 					{error}
 				</div>
 			)}

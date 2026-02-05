@@ -54,10 +54,11 @@ const GridItem = memo(function GridItem({
 			layout
 			initial={{ opacity: 0, scale: 0.95 }}
 			animate={{ opacity: 1, scale: 1 }}
+			whileTap={{ scale: 0.98 }}
 			exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
 			data-selection-id={item.id}
 			className={cn(
-				"group relative rounded-lg border-2 border-transparent p-3 text-center transition",
+				"group relative rounded-lg border-2 border-transparent p-3 text-center transition cursor-pointer",
 				isSelected ? "bg-primary/15 border-primary/30 shadow-sm" : "hover:bg-muted/50",
 				isDragOver && "bg-primary/20 border-primary border-dashed",
 			)}
@@ -132,8 +133,11 @@ export const FileBrowserGrid = memo(function FileBrowserGrid({
 }: FileBrowserGridProps) {
 	if (items.length === 0) {
 		return (
-			<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-				暂无文件
+			<div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground/60">
+				<div className="flex size-20 items-center justify-center rounded-3xl bg-muted/30">
+					<Folder className="size-10" />
+				</div>
+				<p className="text-lg font-medium">暂无文件</p>
 			</div>
 		)
 	}

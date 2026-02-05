@@ -1,7 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table"
 import { Folder, Upload } from "lucide-react"
-import { type MouseEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, {
+	type MouseEvent,
+	memo,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react"
 import { useDropzone } from "react-dropzone"
 import {
 	ContextMenu,
@@ -156,6 +164,8 @@ export const FileBrowser = memo(function FileBrowser({
 			const inner = document.createElement("div")
 			inner.style.pointerEvents = "none"
 
+			const successColor = "hsl(var(--success))"
+
 			if (itemIds.length > 1) {
 				// Stacked effect for multi-selection
 				inner.className = "relative"
@@ -166,8 +176,8 @@ export const FileBrowser = memo(function FileBrowser({
 				for (let i = 2; i > 0; i--) {
 					const layer = document.createElement("div")
 					layer.className =
-						"absolute rounded-lg border-2 border-dashed border-green-500 bg-background/40 shadow-sm"
-					layer.style.borderColor = "#10b981"
+						"absolute rounded-lg border-2 border-dashed border-success bg-background/40 shadow-sm"
+					layer.style.borderColor = successColor
 					layer.style.width = "120px"
 					layer.style.height = "36px"
 					layer.style.top = `${i * 4}px`
@@ -179,20 +189,20 @@ export const FileBrowser = memo(function FileBrowser({
 				// Top layer
 				const topLayer = document.createElement("div")
 				topLayer.className =
-					"absolute inset-0 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-green-500 bg-background/90 px-2 shadow-xl"
-				topLayer.style.borderColor = "#10b981"
+					"absolute inset-0 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-success bg-background/90 px-2 shadow-xl"
+				topLayer.style.borderColor = successColor
 				topLayer.style.width = "120px"
 				topLayer.style.height = "36px"
 
 				const badge = document.createElement("div")
 				badge.className =
-					"flex items-center gap-1.5 rounded-full bg-green-500 p-0.5 pr-2.5 text-white"
-				badge.style.backgroundColor = "#10b981"
+					"flex items-center gap-1.5 rounded-full bg-success p-0.5 pr-2.5 text-success-foreground"
+				badge.style.backgroundColor = successColor
 
 				const countCircle = document.createElement("div")
 				countCircle.className =
-					"flex size-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-green-500"
-				countCircle.style.color = "#10b981"
+					"flex size-5 items-center justify-center rounded-full bg-background text-[11px] font-bold text-success"
+				countCircle.style.color = successColor
 				countCircle.textContent = String(itemIds.length)
 				badge.appendChild(countCircle)
 
@@ -206,8 +216,8 @@ export const FileBrowser = memo(function FileBrowser({
 			} else {
 				// Single item preview (keep filename)
 				inner.className =
-					"flex items-center gap-2 rounded-lg border-2 border-dashed border-green-500 bg-background/90 px-3 py-1.5 shadow-xl"
-				inner.style.borderColor = "#10b981"
+					"flex items-center gap-2 rounded-lg border-2 border-dashed border-success bg-background/90 px-3 py-1.5 shadow-xl"
+				inner.style.borderColor = successColor
 
 				const nameText = document.createElement("span")
 				nameText.className = "max-w-[150px] truncate text-sm font-medium"

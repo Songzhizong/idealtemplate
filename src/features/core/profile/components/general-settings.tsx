@@ -215,7 +215,7 @@ function TenantListItem({ tenant, isCurrent }: { tenant: TenantInfo; isCurrent: 
 					<div className="flex items-center gap-2">
 						<span className="font-semibold tracking-tight">{tenant.name}</span>
 						{isCurrent && (
-							<Badge className="bg-blue-600 px-1.5 py-0 text-[10px] font-medium text-white hover:bg-blue-600/90">
+							<Badge className="bg-primary px-1.5 py-0 text-[10px] font-medium text-primary-foreground hover:bg-primary/90">
 								当前
 							</Badge>
 						)}
@@ -230,7 +230,7 @@ function TenantListItem({ tenant, isCurrent }: { tenant: TenantInfo; isCurrent: 
 
 			<div>
 				{tenant.blocked ? (
-					<Badge className="bg-red-600 px-2.5 font-normal text-white hover:bg-red-600/90">
+					<Badge className="bg-destructive px-2.5 font-normal text-destructive-foreground hover:bg-destructive/90">
 						已封禁
 					</Badge>
 				) : (

@@ -1,5 +1,6 @@
 import { Cpu, Fingerprint, Lock, Server, Smartphone } from "lucide-react"
 import { useEffect, useState } from "react"
+import { BaseLink } from "@/components/common/base-link"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 
@@ -56,13 +57,13 @@ export function LoginPage() {
 	}
 
 	return (
-		<div className="size-full min-h-screen bg-linear-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-slate-900 dark:via-blue-950 dark:to-slate-950 relative overflow-hidden transition-colors">
+		<div className="size-full min-h-screen bg-linear-to-br from-primary/10 via-primary/5 to-background dark:from-primary/10 dark:via-primary/5 dark:to-background relative overflow-hidden transition-colors">
 			{/* Brand Header */}
 			<div className="absolute top-6 left-8 z-50 flex items-center gap-2.5">
-				<div className="w-10 h-10 bg-linear-to-br from-brand-1 to-brand-2 rounded-xl flex items-center justify-center shadow-lg shadow-brand-1/20 group animate-in fade-in slide-in-from-left-4 duration-700">
-					<Cpu className="w-6 h-6 text-white transition-transform group-hover:rotate-12" />
+				<div className="w-10 h-10 bg-linear-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group animate-in fade-in slide-in-from-left-4 duration-700">
+					<Cpu className="w-6 h-6 text-primary-foreground transition-transform group-hover:rotate-12" />
 				</div>
-				<span className="text-2xl font-bold tracking-tight bg-linear-to-r from-gray-950 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+				<span className="text-2xl font-bold tracking-tight bg-linear-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
 					Infera
 				</span>
 			</div>
@@ -74,9 +75,9 @@ export function LoginPage() {
 
 			{/* Decorative Background Elements */}
 			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-[#2463EB]/20 dark:bg-[#2463EB]/30 rounded-full blur-3xl" />
-				<div className="absolute top-1/2 -left-20 w-96 h-96 bg-cyan-300/20 dark:bg-cyan-500/20 rounded-full blur-3xl" />
-				<div className="absolute bottom-0 right-1/3 w-64 h-64 bg-blue-200/30 dark:bg-blue-500/20 rounded-full blur-3xl" />
+				<div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 dark:bg-primary/30 rounded-full blur-3xl" />
+				<div className="absolute top-1/2 -left-20 w-96 h-96 bg-primary/10 dark:bg-primary/20 rounded-full blur-3xl" />
+				<div className="absolute bottom-0 right-1/3 w-64 h-64 bg-primary/10 dark:bg-primary/20 rounded-full blur-3xl" />
 			</div>
 
 			{/* Main Content Grid */}
@@ -86,9 +87,9 @@ export function LoginPage() {
 					<div className="max-w-xl space-y-8">
 						{/* Logo */}
 						<div className="flex items-center gap-3">
-							<h1 className="text-5xl font-extrabold tracking-tight text-gray-950 dark:text-white leading-tight">
+							<h1 className="text-5xl font-extrabold tracking-tight text-foreground leading-tight">
 								推理，
-								<span className="bg-linear-to-r from-brand-1 to-brand-2 bg-clip-text text-transparent">
+								<span className="bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 									唯快不破
 								</span>
 							</h1>
@@ -96,7 +97,7 @@ export function LoginPage() {
 
 						{/* Brand Slogan */}
 						<div className="space-y-4">
-							<p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+							<p className="text-xl text-muted-foreground leading-relaxed">
 								面向 AI 模型服务的统一裸金属运营平台。
 								<br />
 								消除虚拟化开销，实现对异构算力资源的绝对掌控。
@@ -121,12 +122,10 @@ export function LoginPage() {
 							].map((feature, index) => (
 								// biome-ignore lint/suspicious/noArrayIndexKey: Static list
 								<div key={index} className="flex items-start gap-4">
-									<div className="w-2 h-2 bg-[#2463EB] dark:bg-[#3b7bff] rounded-full mt-2" />
+									<div className="w-2 h-2 bg-primary rounded-full mt-2" />
 									<div>
-										<h3 className="font-semibold text-gray-800 dark:text-gray-200">
-											{feature.title}
-										</h3>
-										<p className="text-sm text-gray-600 dark:text-gray-400">{feature.desc}</p>
+										<h3 className="font-semibold text-foreground">{feature.title}</h3>
+										<p className="text-sm text-muted-foreground">{feature.desc}</p>
 									</div>
 								</div>
 							))}
@@ -138,14 +137,14 @@ export function LoginPage() {
 				<div className="flex items-center justify-center px-6 py-12 lg:px-8">
 					{/* Glassmorphism Card */}
 					<div className="w-full max-w-130">
-						<div className="backdrop-blur-lg bg-white/40 dark:bg-gray-900/40 border border-white/60 dark:border-gray-700/60 rounded-3xl shadow-2xl p-8 lg:p-10 min-h-125 flex flex-col">
+						<div className="backdrop-blur-lg bg-background/60 dark:bg-background/50 border border-border/60 rounded-3xl shadow-2xl p-8 lg:p-10 min-h-125 flex flex-col">
 							{/* Mobile Logo */}
 							<div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-								<div className="w-10 h-10 bg-linear-to-br from-[#2463EB] to-[#1e50c5] rounded-xl flex items-center justify-center shadow-lg shadow-[#2463EB]/30">
-									<Server className="w-6 h-6 text-white" />
+								<div className="w-10 h-10 bg-linear-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+									<Server className="w-6 h-6 text-primary-foreground" />
 								</div>
-								<h1 className="text-2xl font-bold bg-linear-to-r from-[#2463EB] to-[#1e50c5] dark:from-[#3b7bff] dark:to-[#2463EB] bg-clip-text text-transparent">
-									CloudCompute
+								<h1 className="text-2xl font-bold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+									Infera
 								</h1>
 							</div>
 
@@ -153,10 +152,8 @@ export function LoginPage() {
 								<>
 									{/* Form Title */}
 									<div className="text-center mb-8">
-										<h2 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">
-											登录您的账户
-										</h2>
-										<p className="text-gray-600 dark:text-gray-400 mt-2">选择您偏好的登录方式</p>
+										<h2 className="text-2xl lg:text-3xl font-bold text-foreground">登录您的账户</h2>
+										<p className="text-muted-foreground mt-2">选择您偏好的登录方式</p>
 									</div>
 
 									{/* Tabs */}
@@ -168,18 +165,18 @@ export function LoginPage() {
 										<TabsList
 											className={`grid w-full ${
 												passkeySupported ? "grid-cols-3" : "grid-cols-2"
-											} mb-6 bg-gray-200/40 dark:bg-gray-800/60 p-1 rounded-2xl backdrop-blur-sm h-11`}
+											} mb-6 bg-muted/50 dark:bg-muted/40 p-1 rounded-2xl backdrop-blur-sm h-11`}
 										>
 											<TabsTrigger
 												value="password"
-												className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:shadow-black/30 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 rounded-xl transition-all duration-200"
+												className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-foreground/10 data-[state=inactive]:text-muted-foreground rounded-xl transition-all duration-200"
 											>
 												<Lock className="w-4 h-4" />
 												密码
 											</TabsTrigger>
 											<TabsTrigger
 												value="sms"
-												className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:shadow-black/30 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 rounded-xl transition-all duration-200"
+												className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-foreground/10 data-[state=inactive]:text-muted-foreground rounded-xl transition-all duration-200"
 											>
 												<Smartphone className="w-4 h-4" />
 												验证码
@@ -187,7 +184,7 @@ export function LoginPage() {
 											{passkeySupported && (
 												<TabsTrigger
 													value="passkey"
-													className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:shadow-black/10 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:shadow-black/30 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400 rounded-xl transition-all duration-200"
+													className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:shadow-foreground/10 data-[state=inactive]:text-muted-foreground rounded-xl transition-all duration-200"
 												>
 													<Fingerprint className="w-4 h-4" />
 													Passkey
@@ -215,10 +212,10 @@ export function LoginPage() {
 									{/* Divider */}
 									<div className="relative my-8">
 										<div className="absolute inset-0 flex items-center">
-											<div className="w-full border-t border-gray-300 dark:border-gray-600" />
+											<div className="w-full border-t border-border/60" />
 										</div>
 										<div className="relative flex justify-center text-sm">
-											<span className="px-4 bg-white/40 dark:bg-gray-900/40 text-gray-600 dark:text-gray-400 backdrop-blur-xs rounded-full">
+											<span className="px-4 bg-background/50 text-muted-foreground backdrop-blur-xs rounded-full">
 												或使用以下方式登录
 											</span>
 										</div>
@@ -229,7 +226,7 @@ export function LoginPage() {
 										<Button
 											variant="outline"
 											type="button"
-											className="h-11 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 dark:text-gray-100"
+											className="h-11 bg-background/60 border-border/60 hover:bg-background/80 text-foreground"
 										>
 											<svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
 												<path
@@ -254,7 +251,7 @@ export function LoginPage() {
 										<Button
 											variant="outline"
 											type="button"
-											className="h-11 bg-white/60 dark:bg-gray-800/60 border-white/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 dark:text-gray-100"
+											className="h-11 bg-background/60 border-border/60 hover:bg-background/80 text-foreground"
 										>
 											<svg
 												className="w-5 h-5 mr-2"
@@ -269,14 +266,14 @@ export function LoginPage() {
 									</div>
 
 									{/* Register Link */}
-									<p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-8">
+									<p className="text-center text-sm text-muted-foreground mt-8">
 										还没有账户?
-										<a
-											href="/register"
-											className="text-[#2463EB] dark:text-[#3b7bff] hover:text-[#1e50c5] dark:hover:text-[#2463EB] font-semibold ml-3"
+										<BaseLink
+											to="/register"
+											className="text-primary hover:text-primary/80 font-semibold ml-3"
 										>
 											立即注册
-										</a>
+										</BaseLink>
 									</p>
 								</>
 							) : view === "select-account" ? (
@@ -313,18 +310,15 @@ export function LoginPage() {
 						</div>
 
 						{/* Footer */}
-						<p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
+						<p className="text-center text-xs text-muted-foreground mt-6">
 							登录即表示您同意我们的
-							<a href="/terms" className="text-[#2463EB] dark:text-[#3b7bff] hover:underline mx-1">
+							<BaseLink to="/terms" className="text-primary hover:underline mx-1">
 								服务条款
-							</a>
+							</BaseLink>
 							和
-							<a
-								href="/privacy"
-								className="text-[#2463EB] dark:text-[#3b7bff] hover:underline mx-1"
-							>
+							<BaseLink to="/privacy" className="text-primary hover:underline mx-1">
 								隐私政策
-							</a>
+							</BaseLink>
 						</p>
 					</div>
 				</div>

@@ -172,7 +172,9 @@ export function ensureSeeded(bizType: string) {
 			objectSize: "4096",
 			createdTime: nowIso(),
 			deleted: false,
-			content: new TextEncoder().encode("name,hex\nPrimary,#000000\nSecondary,#FFFFFF\n").buffer,
+			content: new TextEncoder().encode(
+				"name,color\nPrimary,hsl(var(--primary))\nSecondary,hsl(var(--secondary))\n",
+			).buffer,
 			bizType,
 		},
 		{

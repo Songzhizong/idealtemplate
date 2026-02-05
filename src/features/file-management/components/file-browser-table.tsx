@@ -1,4 +1,5 @@
 import { flexRender, type Table as ReactTable, type Row } from "@tanstack/react-table"
+import { Folder } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import React, { type DragEvent, type MouseEvent, memo } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -65,7 +66,7 @@ const TableRowItem = memo(function TableRowItem({
 			exit={{ opacity: 0, x: -10, transition: { duration: 0.2 } }}
 			data-selection-id={item.id}
 			className={cn(
-				"group transition-colors relative border-b hover:bg-muted/50 data-[state=selected]:bg-muted",
+				"group transition-colors relative border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer",
 				isSelected ? "bg-primary/15" : "",
 				isDragOver && "bg-primary/20",
 			)}
@@ -116,8 +117,11 @@ export const FileBrowserTable = memo(function FileBrowserTable({
 }: FileBrowserTableProps) {
 	if (items.length === 0) {
 		return (
-			<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-				暂无文件
+			<div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground/60">
+				<div className="flex size-20 items-center justify-center rounded-3xl bg-muted/30">
+					<Folder className="size-10" />
+				</div>
+				<p className="text-lg font-medium">暂无文件</p>
 			</div>
 		)
 	}

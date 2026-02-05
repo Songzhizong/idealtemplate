@@ -26,6 +26,7 @@
 	--color-form-input: hsl(var(--form-input));
 	--color-ring: hsl(var(--ring));
 	--color-form-ring: hsl(var(--form-ring));
+	--color-overlay: hsl(var(--overlay));
 	--color-sidebar: hsl(var(--sidebar-background));
 	--color-sidebar-foreground: hsl(var(--sidebar-foreground));
 	--color-sidebar-primary: hsl(var(--sidebar-primary));

@@ -158,7 +158,7 @@ export function useFileManagerActions({
 			setConfirmAction({
 				title: "确认彻底删除?",
 				description: "此操作无法撤销。",
-				icon: <Trash2 className="size-6 text-red-600" />,
+				icon: <Trash2 className="size-6 text-destructive" />,
 				variant: "destructive",
 				confirmText: "删除",
 				onConfirm: async () => {
@@ -225,7 +225,7 @@ export function useFileManagerActions({
 		setConfirmAction({
 			title: "确认彻底删除?",
 			description: "此操作无法撤销。",
-			icon: <Trash2 className="size-6 text-red-600" />,
+			icon: <Trash2 className="size-6 text-destructive" />,
 			variant: "destructive",
 			confirmText: "删除",
 			onConfirm: async () => {
@@ -251,7 +251,7 @@ export function useFileManagerActions({
 		setConfirmAction({
 			title: "确认清空回收站?",
 			description: "此操作无法撤销。",
-			icon: <Trash2 className="size-6 text-red-600" />,
+			icon: <Trash2 className="size-6 text-destructive" />,
 			variant: "destructive",
 			confirmText: "清空",
 			onConfirm: async () => {

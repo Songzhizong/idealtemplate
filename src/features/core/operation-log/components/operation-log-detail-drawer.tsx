@@ -125,12 +125,12 @@ const CodeHighlighter = ({ code }: { code: string }) => {
 	}, [code])
 
 	return (
-		<div className="relative overflow-hidden rounded-md border border-border/60 bg-[#282c34]">
+		<div className="relative overflow-hidden rounded-md border border-border/60 bg-muted/60">
 			<div className="absolute right-2 top-2 z-10">
 				<Button
 					variant="ghost"
 					size="icon"
-					className="h-6 w-6 text-muted-foreground hover:bg-white/10 hover:text-white"
+					className="h-6 w-6 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
 					onClick={handleCopy}
 				>
 					<Copy className="h-3 w-3" />
@@ -424,18 +424,18 @@ export function OperationLogDetailDrawer({
 																styles={{
 																	variables: {
 																		dark: {
-																			diffViewerBackground: "#282c34",
-																			diffViewerColor: "#FFF",
-																			addedBackground: "#044B53",
-																			addedColor: "white",
-																			removedBackground: "#632F34",
-																			removedColor: "white",
-																			wordAddedBackground: "#055d67",
-																			wordRemovedBackground: "#7d383f",
-																			addedGutterBackground: "#034148",
-																			removedGutterBackground: "#632b30",
-																			gutterBackground: "#2f333d",
-																			gutterColor: "#677182",
+																			diffViewerBackground: "hsl(var(--background))",
+																			diffViewerColor: "hsl(var(--foreground))",
+																			addedBackground: "hsl(var(--success-subtle))",
+																			addedColor: "hsl(var(--success-on-subtle))",
+																			removedBackground: "hsl(var(--error-subtle))",
+																			removedColor: "hsl(var(--error-on-subtle))",
+																			wordAddedBackground: "hsl(var(--success-subtle))",
+																			wordRemovedBackground: "hsl(var(--error-subtle))",
+																			addedGutterBackground: "hsl(var(--success-subtle))",
+																			removedGutterBackground: "hsl(var(--error-subtle))",
+																			gutterBackground: "hsl(var(--muted))",
+																			gutterColor: "hsl(var(--muted-foreground))",
 																			...{
 																				// Optional override for light theme if detected,
 																				// but keeping it simple for now as we don't know the exact theme state easily without context
