@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { useMemo } from "react"
 import type {
+	DataTableColumnDef,
 	DataTableDragSort,
 	DataTableFeatureRuntime,
 	DataTableFeatures,
@@ -22,20 +23,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function getColumnId<TData>(column: ColumnDef<TData>): string | null {
+function getColumnId<TData>(column: DataTableColumnDef<TData>): string | null {
 	if (isRecord(column) && typeof column.id === "string") return column.id
 	if (isRecord(column) && typeof column.accessorKey === "string") return column.accessorKey
 	return null
 }
 
-function getLeafColumnDefs<TData>(columns: ColumnDef<TData>[]): ColumnDef<TData>[] {
-	const leaf: ColumnDef<TData>[] = []
+function getLeafColumnDefs<TData>(
+	columns: DataTableColumnDef<TData>[],
+): DataTableColumnDef<TData>[] {
+	const leaf: DataTableColumnDef<TData>[] = []
 	const stack = [...columns]
 	while (stack.length > 0) {
 		const current = stack.shift()
 		if (!current) continue
 		if (isRecord(current) && Array.isArray(current.columns)) {
-			stack.unshift(...(current.columns as ColumnDef<TData>[]))
+			stack.unshift(...(current.columns as DataTableColumnDef<TData>[]))
 			continue
 		}
 		leaf.push(current)
@@ -80,7 +83,7 @@ function mergePinnedColumns(args: {
 
 export function useFeatureRuntimes<TData, TFilterSchema>(args: {
 	features: DataTableFeatures<TData, TFilterSchema> | undefined
-	columns: ColumnDef<TData>[]
+	columns: DataTableColumnDef<TData>[]
 	getRowId: ((row: TData) => string) | undefined
 	rows: TData[]
 	snapshot: TableStateSnapshot<TFilterSchema>

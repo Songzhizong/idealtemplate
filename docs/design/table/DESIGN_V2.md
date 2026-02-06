@@ -54,7 +54,8 @@ V2 方案以“统一 dt（data-table instance）模型”为中心，通过适�
 
 ```ts
 export interface UseDataTableOptions<TData, TFilterSchema> {
-  columns: ColumnDef<TData>[]
+  // 使用 `never` 作为 TValue：允许异构列（string/number/...）在同一个数组中共存，且调用方无感知
+  columns: ColumnDef<TData, never>[]
   dataSource: DataSource<TData, TFilterSchema>
   state: TableStateAdapter<TFilterSchema>
   features?: DataTableFeatures<TData, TFilterSchema>

@@ -3,6 +3,8 @@ import type { inferParserType, ParserMap } from "nuqs"
 import type { ReactNode } from "react"
 import type { PreferenceEnvelope, PreferenceMigration } from "@/components/table/v2"
 
+export type DataTableColumnDef<TData> = ColumnDef<TData, never>
+
 export type {
 	PreferenceEnvelope,
 	PreferenceMergeContext,
@@ -135,7 +137,7 @@ export interface DataTableInstance<TData, TFilterSchema> {
 }
 
 export interface UseDataTableOptions<TData, TFilterSchema> {
-	columns: ColumnDef<TData>[]
+	columns: DataTableColumnDef<TData>[]
 	dataSource: DataSource<TData, TFilterSchema>
 	state: TableStateAdapter<TFilterSchema>
 	features?: DataTableFeatures<TData, TFilterSchema>

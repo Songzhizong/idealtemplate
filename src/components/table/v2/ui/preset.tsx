@@ -42,10 +42,12 @@ export function DataTablePreset<TData, TFilterSchema>({
 			{...(layout ? { layout } : {})}
 		>
 			<DataTableToolbar actions={toolbarActions}>{toolbarContent}</DataTableToolbar>
-			<DataTableTable<TData>
-				{...(renderEmpty ? { renderEmpty } : {})}
-				{...(renderError ? { renderError } : {})}
-			/>
+			<div className="overflow-x-auto">
+				<DataTableTable<TData>
+					{...(renderEmpty ? { renderEmpty } : {})}
+					{...(renderError ? { renderError } : {})}
+				/>
+			</div>
 			<DataTableSelectionBar<TData>
 				{...(selectionBarActions ? { actions: selectionBarActions } : {})}
 			/>

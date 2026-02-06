@@ -282,7 +282,7 @@
   - [x] `dragSort` 测试
 
 ### 手动验证
-- [ ] 创建示例页面 `src/pages/examples/table-v2-demo.tsx`
+- [x] 创建示例页面 `src/features/example/table/index.tsx`
 - [ ] 验证阶段 1 场景
   - [ ] 首次加载显示 loading
   - [ ] 数据加载后正常渲染
