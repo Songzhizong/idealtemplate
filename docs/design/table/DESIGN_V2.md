@@ -259,7 +259,7 @@ export interface TableStateAdapter<TFilterSchema> {
 export interface DataTableQuery<TFilterSchema> {
   page: number
   size: number
-  sort: { field: string; order: "asc" | "desc" } | null
+  sort: { field: string; order: "asc" | "desc" }[]
   filters: TFilterSchema
 }
 
@@ -621,10 +621,15 @@ export function DataTablePreset<TData, TFilterSchema>(props: {
 }): JSX.Element
 
 export function DataTableToolbar(props: { children?: ReactNode; actions?: ReactNode }): JSX.Element
-export function DataTableSearch(props: {
-  filterKey?: string
+export function DataTableSearch<TFilterSchema>(props: {
+  filterKey?: keyof TFilterSchema
   placeholder?: string
   debounceMs?: number
+  className?: string
+  inputClassName?: string
+  i18n?: DataTableI18nOverrides
+  mode?: "simple" | "advanced"
+  advancedFields?: FilterDefinition<TFilterSchema, keyof TFilterSchema>[]
 }): JSX.Element
 export function DataTableViewOptions(props?: {
   showResetAll?: boolean
@@ -641,6 +646,7 @@ export function DataTableSelectionBar<TData>(props: {
     selectedRowIds: string[]
     selectedRowsCurrentPage: TData[]
     mode: "page" | "cross-page"
+    selection: DataTableSelection<TData>
   }) => ReactNode
 }): JSX.Element
 ```
@@ -651,6 +657,8 @@ export function DataTableSelectionBar<TData>(props: {
 - `DataTableSearch` 只更新 `dt.filters.set(filterKey, value)`，默认 `filterKey = "q"`。
 - `DataTableSearch` 内置输入尾部清空按钮；清空后立即写回空值，并取消 pending 的 debounce。
 - `DataTableSearch.debounceMs` 默认 300ms；URL 模式下由 state adapter 负责将“输入态”和“已提交态”统一为一个规范（UI 不直接操作 URL）。
+- `DataTableSearch.mode = "simple"` 为默认行为；`mode = "advanced"` 启用结构化搜索（字段选择 + 条件输入 + 回车/确认提交）。
+- `DataTableSearch.mode = "advanced"` 在 V1 阶段仅保证 `text` / `select` / `multi-select` 三种字段类型。
 - `DataTablePagination` 调用 `dt.actions.setPage/setPageSize`，显示 `dt.pagination`。
 - `DataTableTable` 仅渲染 table（header/body/empty/error/loading），其状态来自 `dt.status`。
 - `DataTableSelectionBar` 以 `selectedRowIds` 为跨页批量的主入口；`selectedRowsCurrentPage` 仅用于“当前页批量”或展示选中摘要。
@@ -1030,7 +1038,7 @@ export interface SelectionFeatureOptions {
 
 ```
 DataTableToolbar
-├── DataTableSearch          # 全局搜索（默认 filterKey="q"，内置清空）
+├── DataTableSearch          # 全局搜索（支持 simple/advanced）
 ├── DataTableFilterBar       # 筛选条容器
 │   └── DataTableFilterItem  # 单个筛选项（内置清空）
 └── DataTableActiveFilters   # 已激活筛选标签展示
@@ -1072,9 +1080,13 @@ export interface FilterDefinition<TFilterSchema, K extends keyof TFilterSchema> 
 
 export interface DataTableFilterBarProps<TFilterSchema> {
   filters: FilterDefinition<TFilterSchema, keyof TFilterSchema>[]
+  activeFilters?: FilterDefinition<TFilterSchema, keyof TFilterSchema>[] // 仅用于激活标签展示
   showActiveFilters?: boolean // 是否显示已激活筛选标签
   collapsible?: boolean       // 是否可折叠
   maxVisible?: number         // 默认显示的最大筛选项数
+  labelMode?: "top" | "inside"
+  showItemClearButtons?: boolean // 默认: showActiveFilters=true 时自动隐藏项内清空按钮
+  className?: string
 }
 ```
 
@@ -1098,9 +1110,12 @@ function DataTableFilterItem<TFilterSchema, K extends keyof TFilterSchema>({
     // 注意：state adapter 会自动处理 resetPageOnFilterChange
   }
 
-  // 通过 dt.filters.set(key, null) 清空单个筛选
+  // 清空语义：text -> ""；其他类型 -> null
   const handleRemove = () => {
-    dt.filters.set(definition.key, null as TFilterSchema[K])
+    dt.filters.set(
+      definition.key,
+      (definition.type === "text" ? "" : null) as TFilterSchema[K],
+    )
   }
 
   return renderFilterByType(definition.type, {
@@ -1134,6 +1149,7 @@ export function DataTableActiveFilters<TFilterSchema>(props: {
 - `DataTableSearch` 的清空行为应作为默认能力，不要求业务额外添加“重置筛选”按钮。
 - `DataTableFilterItem` 应支持单项清空（建议在标签区/标题区提供 X 按钮）。
 - 页面级“清空全部筛选”可通过 `DataTableActiveFilters` 或显式按钮触发 `dt.filters.reset()`。
+- 文本类型筛选（`type = "text"`）的单项清空值应统一为 `""`；其余类型统一为 `null`（或类型对应空值）。
 
 ---
 

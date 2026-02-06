@@ -25,13 +25,29 @@ export interface DemoUser {
   department: DemoUserDepartment
   status: DemoUserStatus
   isOnline: boolean
+  riskScore: number
   createdAt: string
   lastLoginAt: string
 }
 
+export interface DemoUserNumberRange {
+  min: number | undefined
+  max: number | undefined
+}
+
+export interface DemoUserDateRange {
+  from: Date | undefined
+  to: Date | undefined
+}
+
 export interface DemoUserFilters {
   q: string
+  nameKeyword: string
   status: string | null
   role: string | null
   department: string | null
+  isOnline: boolean | null
+  riskScoreRange: DemoUserNumberRange | null
+  createdAtDate: Date | null
+  lastLoginRange: DemoUserDateRange | null
 }

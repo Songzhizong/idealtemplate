@@ -200,6 +200,30 @@ export const demoUserTableColumns: ColumnDef<DemoUser, never>[] = [
       headerLabel: "手机号",
     },
   }),
+  helper.accessor("riskScore", {
+    header: ({ column }) => <SortableHeader column={column} label="风险分" />,
+    cell: ({ row }) => <span className="font-mono text-sm">{row.original.riskScore}</span>,
+    enableSorting: true,
+    size: 110,
+    minSize: 100,
+    meta: {
+      headerLabel: "风险分",
+    },
+  }),
+  helper.accessor("createdAt", {
+    header: ({ column }) => <SortableHeader column={column} label="创建时间" />,
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {formatDateTime(row.original.createdAt)}
+      </span>
+    ),
+    enableSorting: true,
+    size: 180,
+    minSize: 160,
+    meta: {
+      headerLabel: "创建时间",
+    },
+  }),
   helper.accessor("lastLoginAt", {
     header: ({ column }) => <SortableHeader column={column} label="最后登录" />,
     cell: ({ row }) => (

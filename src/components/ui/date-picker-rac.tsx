@@ -89,10 +89,24 @@ interface DatePickerProps {
 	onChange?: (date: Date | undefined) => void
 	placeholder?: string
 	className?: string
+	triggerClassName?: string
+	autoOpen?: boolean
+	autoFocusInput?: boolean
+	inlineCalendar?: boolean
 }
 
-export function DatePicker({ value, onChange, className }: DatePickerProps) {
+export function DatePicker({
+	value,
+	onChange,
+	className,
+	triggerClassName,
+	autoOpen = false,
+	autoFocusInput = false,
+	inlineCalendar = false,
+}: DatePickerProps) {
 	const [date, setDate] = React.useState<DateValue | null>(value ? dateToCalendarDate(value) : null)
+	const [open, setOpen] = React.useState(autoOpen)
+	const groupRef = React.useRef<HTMLDivElement>(null)
 
 	React.useEffect(() => {
 		if (value) {
@@ -102,28 +116,48 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
 		}
 	}, [value])
 
+	React.useEffect(() => {
+		if (inlineCalendar) return
+		if (!autoOpen) return
+		setOpen(true)
+	}, [autoOpen, inlineCalendar])
+
+	React.useEffect(() => {
+		if (!autoFocusInput) return
+		requestAnimationFrame(() => {
+			const focusTarget =
+				groupRef.current?.querySelector<HTMLElement>("[role='spinbutton']") ??
+				groupRef.current?.querySelector<HTMLElement>("[tabindex='0']")
+			focusTarget?.focus()
+		})
+	}, [autoFocusInput])
+
 	const handleChange = (newDate: DateValue | null) => {
 		setDate(newDate)
 		if (onChange) {
 			onChange(newDate ? calendarDateToDate(newDate) : undefined)
 		}
 	}
+	const pickerOpenProps = inlineCalendar ? {} : { isOpen: open, onOpenChange: setOpen }
 
 	return (
 		<AriaDatePicker
 			className={cn("group flex flex-col gap-1 w-60", className)}
 			value={date}
 			onChange={handleChange}
+			{...pickerOpenProps}
 		>
 			<Label className="sr-only">Date</Label>
-			<Group
-				className={cn(
-					buttonStyles,
-					"w-full",
-					"data-focus-within:ring-2 data-focus-within:ring-ring",
-					"m-0.5", // Add margin to ensure focus ring is not clipped
-				)}
-			>
+				<Group
+					ref={groupRef}
+					className={cn(
+						buttonStyles,
+						"w-full",
+						"data-focus-within:ring-2 data-focus-within:ring-ring",
+						"m-0.5", // Add margin to ensure focus ring is not clipped
+						triggerClassName,
+					)}
+				>
 				<DateInput className="flex flex-1 items-center bg-transparent p-0 text-sm placeholder:text-muted-foreground outline-none">
 					{(segment) => (
 						<DateSegment
@@ -136,11 +170,17 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
 					<CalendarIcon className="h-4 w-4" />
 				</AriaButton>
 			</Group>
-			<Popover className={popoverContentStyles}>
-				<Dialog className="p-0 outline-none">
+			{inlineCalendar ? (
+				<div className="mt-1 rounded-md border border-border/50 bg-popover p-1">
 					<MyCalendar />
-				</Dialog>
-			</Popover>
+				</div>
+			) : (
+				<Popover className={popoverContentStyles}>
+					<Dialog className="p-0 outline-none">
+						<MyCalendar />
+					</Dialog>
+				</Popover>
+			)}
 		</AriaDatePicker>
 	)
 }
@@ -181,14 +221,28 @@ interface DateRangePickerProps {
 	onChange?: (range: { from: Date; to?: Date } | undefined) => void
 	placeholder?: string
 	className?: string
+	triggerClassName?: string
+	autoOpen?: boolean
+	autoFocusInput?: boolean
+	inlineCalendar?: boolean
 }
 
-export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
+export function DateRangePicker({
+	value,
+	onChange,
+	className,
+	triggerClassName,
+	autoOpen = false,
+	autoFocusInput = false,
+	inlineCalendar = false,
+}: DateRangePickerProps) {
 	const [range, setRange] = React.useState<{ start: DateValue; end: DateValue } | null>(
 		value?.from && value?.to
 			? { start: dateToCalendarDate(value.from), end: dateToCalendarDate(value.to) }
 			: null,
 	)
+	const [open, setOpen] = React.useState(autoOpen)
+	const groupRef = React.useRef<HTMLDivElement>(null)
 
 	React.useEffect(() => {
 		if (value?.from && value?.to) {
@@ -205,6 +259,22 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 			setRange(null)
 		}
 	}, [value])
+
+	React.useEffect(() => {
+		if (inlineCalendar) return
+		if (!autoOpen) return
+		setOpen(true)
+	}, [autoOpen, inlineCalendar])
+
+	React.useEffect(() => {
+		if (!autoFocusInput) return
+		requestAnimationFrame(() => {
+			const focusTarget =
+				groupRef.current?.querySelector<HTMLElement>("[role='spinbutton']") ??
+				groupRef.current?.querySelector<HTMLElement>("[tabindex='0']")
+			focusTarget?.focus()
+		})
+	}, [autoFocusInput])
 
 	const handleChange = (newRange: { start: DateValue; end: DateValue } | null) => {
 		setRange(newRange)
@@ -223,20 +293,24 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 		setRange(null)
 		onChange?.(undefined)
 	}
+	const pickerOpenProps = inlineCalendar ? {} : { isOpen: open, onOpenChange: setOpen }
 
 	return (
 		<AriaDateRangePicker
 			className={cn("group flex flex-col gap-1 w-fit", className)}
 			value={range}
 			onChange={handleChange}
+			{...pickerOpenProps}
 		>
 			<Label className="sr-only">Date Range</Label>
 			<Group
+				ref={groupRef}
 				className={cn(
 					buttonStyles,
 					"w-fit min-w-50",
 					"data-focus-within:ring-2 data-focus-within:ring-ring relative",
 					"m-0.5", // Add margin to ensure focus ring is not clipped
+					triggerClassName,
 				)}
 			>
 				<DateInput
@@ -280,11 +354,17 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 					</AriaButton>
 				</div>
 			</Group>
-			<Popover className={cn(popoverContentStyles, "max-w-[calc(100vw-1rem)] sm:max-w-none p-1")}>
-				<Dialog className="p-0 outline-none">
+			{inlineCalendar ? (
+				<div className="mt-1 rounded-md border border-border/50 bg-popover p-1">
 					<MyRangeCalendar />
-				</Dialog>
-			</Popover>
+				</div>
+			) : (
+				<Popover className={cn(popoverContentStyles, "max-w-[calc(100vw-1rem)] sm:max-w-none p-1")}>
+					<Dialog className="p-0 outline-none">
+						<MyRangeCalendar />
+					</Dialog>
+				</Popover>
+			)}
 		</AriaDateRangePicker>
 	)
 }

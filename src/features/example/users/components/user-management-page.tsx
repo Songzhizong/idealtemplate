@@ -67,9 +67,14 @@ export function UserManagementPage() {
       sort: [],
       filters: {
         q: "",
+        nameKeyword: "",
         status: null,
         role: null,
         department: null,
+        isOnline: null,
+        riskScoreRange: null,
+        createdAtDate: null,
+        lastLoginRange: null,
       },
     },
   })
@@ -118,6 +123,13 @@ export function UserManagementPage() {
   >(() => {
     return [
       {
+        key: "nameKeyword",
+        label: "姓名",
+        type: "text",
+        placeholder: "输入姓名关键字后回车",
+        defaultVisible: true,
+      },
+      {
         key: "status",
         label: "状态",
         type: "select",
@@ -149,6 +161,28 @@ export function UserManagementPage() {
           value: department,
         })),
         defaultVisible: true,
+      },
+      {
+        key: "isOnline",
+        label: "在线状态",
+        type: "boolean",
+        defaultVisible: true,
+      },
+      {
+        key: "riskScoreRange",
+        label: "风险分区间",
+        type: "number-range",
+        defaultVisible: true,
+      },
+      {
+        key: "createdAtDate",
+        label: "创建日期",
+        type: "date",
+      },
+      {
+        key: "lastLoginRange",
+        label: "最近登录区间",
+        type: "date-range",
       },
     ]
   }, [])
@@ -222,15 +256,17 @@ export function UserManagementPage() {
     downloadCsv({
       filename,
       rows: [
-        ["ID", "姓名", "邮箱", "手机号", "角色", "部门", "状态", "最后登录"],
+        ["ID", "姓名", "邮箱", "手机号", "风险分", "角色", "部门", "状态", "创建时间", "最后登录"],
         ...rows.map((user) => [
           user.id,
           user.name,
           user.email,
           user.phone,
+          String(user.riskScore),
           ROLE_LABEL[user.role],
           user.department,
           STATUS_LABEL[user.status],
+          user.createdAt,
           user.lastLoginAt,
         ]),
       ],
@@ -243,15 +279,17 @@ export function UserManagementPage() {
     downloadCsv({
       filename,
       rows: [
-        ["ID", "姓名", "邮箱", "手机号", "角色", "部门", "状态", "最后登录"],
+        ["ID", "姓名", "邮箱", "手机号", "风险分", "角色", "部门", "状态", "创建时间", "最后登录"],
         ...selectedRowsCurrentPage.map((user) => [
           user.id,
           user.name,
           user.email,
           user.phone,
+          String(user.riskScore),
           ROLE_LABEL[user.role],
           user.department,
           STATUS_LABEL[user.status],
+          user.createdAt,
           user.lastLoginAt,
         ]),
       ],
@@ -264,7 +302,7 @@ export function UserManagementPage() {
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-foreground">用户管理</h1>
           <p className="text-sm text-muted-foreground">
-            用于验证 DataTable V2 的搜索、防抖筛选、分页与表格特性（选择/列显隐/列宽/Pin/Density）。
+            用于验证 DataTable V2 的高级筛选能力（布尔、数值区间、日期、日期区间）。
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -301,7 +339,8 @@ export function UserManagementPage() {
         <CardHeader>
           <CardTitle>用户列表（Table V2）</CardTitle>
           <CardDescription>
-            内置 220 条 mock 用户数据，支持搜索（姓名/邮箱/手机号）与分页，模拟远程请求。
+            内置 220 条 mock
+            用户数据，支持高级条件组合筛选（在线状态、风险分、创建日期、登录区间）。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -329,7 +368,7 @@ export function UserManagementPage() {
             >
               <DataTableSearch<DemoUserFilters>
                 mode="advanced"
-                placeholder="输入关键字后按回车，或选择字段后添加条件"
+                placeholder="输入关键字按回车，或选择字段后添加条件（布尔/区间/日期）"
                 advancedFields={filterDefinitions}
               />
             </DataTableToolbar>

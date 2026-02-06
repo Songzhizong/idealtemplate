@@ -4,8 +4,10 @@ import {
   DEMO_USER_ROLES,
   DEMO_USER_STATUSES,
   type DemoUser,
+  type DemoUserDateRange,
   type DemoUserDepartment,
   type DemoUserFilters,
+  type DemoUserNumberRange,
   type DemoUserRole,
   type DemoUserStatus,
 } from "../types"
@@ -77,6 +79,76 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase()
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isDateValue(value: unknown): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime())
+}
+
+function parseNumberRange(value: unknown): DemoUserNumberRange {
+  if (isRecord(value)) {
+    const min = typeof value.min === "number" ? value.min : undefined
+    const max = typeof value.max === "number" ? value.max : undefined
+    return { min, max }
+  }
+  if (Array.isArray(value)) {
+    const [min, max] = value
+    return {
+      min: typeof min === "number" ? min : undefined,
+      max: typeof max === "number" ? max : undefined,
+    }
+  }
+  return {
+    min: undefined,
+    max: undefined,
+  }
+}
+
+function parseDateRange(value: unknown): DemoUserDateRange | undefined {
+  if (Array.isArray(value)) {
+    const [from, to] = value
+    if (isDateValue(from) || isDateValue(to)) {
+      return {
+        from: isDateValue(from) ? from : undefined,
+        to: isDateValue(to) ? to : undefined,
+      }
+    }
+  }
+  if (isRecord(value)) {
+    const from = value.from
+    const to = value.to
+    if (isDateValue(from) || isDateValue(to)) {
+      return {
+        from: isDateValue(from) ? from : undefined,
+        to: isDateValue(to) ? to : undefined,
+      }
+    }
+  }
+  return undefined
+}
+
+function startOfDayMs(value: Date): number {
+  const date = new Date(value)
+  date.setHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
+function endOfDayMs(value: Date): number {
+  const date = new Date(value)
+  date.setHours(23, 59, 59, 999)
+  return date.getTime()
+}
+
+function isSameDay(left: Date, right: Date): boolean {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  )
+}
+
 function isDemoUserStatus(value: string): value is DemoUserStatus {
   return (DEMO_USER_STATUSES as readonly string[]).includes(value)
 }
@@ -134,6 +206,7 @@ export function createDemoUsers(count: number): DemoUser[] {
     const lastLoginAt = new Date(now - lastLoginMinutesAgo * 60 * 1000).toISOString()
 
     const isOnline = status === "active" && rnd() > 0.55
+    const riskScore = Math.round(30 + rnd() * 70)
 
     users.push({
       id,
@@ -144,6 +217,7 @@ export function createDemoUsers(count: number): DemoUser[] {
       department,
       status,
       isOnline,
+      riskScore,
       createdAt,
       lastLoginAt,
     })
@@ -177,6 +251,46 @@ export function filterDemoUsers(rows: DemoUser[], filters: DemoUserFilters): Dem
     next = next.filter((row) => row.department === department)
   }
 
+  const nameKeyword = normalizeText(filters.nameKeyword)
+  if (nameKeyword !== "") {
+    next = next.filter((row) => normalizeText(row.name).includes(nameKeyword))
+  }
+
+  if (typeof filters.isOnline === "boolean") {
+    next = next.filter((row) => row.isOnline === filters.isOnline)
+  }
+
+  const riskScoreRange = parseNumberRange(filters.riskScoreRange)
+  if (riskScoreRange.min != null || riskScoreRange.max != null) {
+    next = next.filter((row) => {
+      if (riskScoreRange.min != null && row.riskScore < riskScoreRange.min) return false
+      if (riskScoreRange.max != null && row.riskScore > riskScoreRange.max) return false
+      return true
+    })
+  }
+
+  const createdAtDate = filters.createdAtDate
+  if (isDateValue(createdAtDate)) {
+    next = next.filter((row) => {
+      const rowDate = new Date(row.createdAt)
+      if (Number.isNaN(rowDate.getTime())) return false
+      return isSameDay(rowDate, createdAtDate)
+    })
+  }
+
+  const lastLoginRange = parseDateRange(filters.lastLoginRange)
+  if (lastLoginRange?.from || lastLoginRange?.to) {
+    const fromMs = lastLoginRange.from ? startOfDayMs(lastLoginRange.from) : null
+    const toMs = lastLoginRange.to ? endOfDayMs(lastLoginRange.to) : null
+    next = next.filter((row) => {
+      const rowMs = Date.parse(row.lastLoginAt)
+      if (Number.isNaN(rowMs)) return false
+      if (fromMs != null && rowMs < fromMs) return false
+      if (toMs != null && rowMs > toMs) return false
+      return true
+    })
+  }
+
   const query = normalizeText(filters.q)
   if (!query) return next
 
@@ -193,6 +307,7 @@ type SortableField =
   | "name"
   | "email"
   | "phone"
+  | "riskScore"
   | "role"
   | "department"
   | "status"
@@ -204,6 +319,7 @@ function isSortableField(value: string): value is SortableField {
     value === "name" ||
     value === "email" ||
     value === "phone" ||
+    value === "riskScore" ||
     value === "role" ||
     value === "department" ||
     value === "status" ||
@@ -233,6 +349,8 @@ function compareByField(left: DemoUser, right: DemoUser, field: SortableField): 
       return (STATUS_ORDER[left.status] ?? 0) - (STATUS_ORDER[right.status] ?? 0)
     case "role":
       return (ROLE_ORDER[left.role] ?? 0) - (ROLE_ORDER[right.role] ?? 0)
+    case "riskScore":
+      return left.riskScore - right.riskScore
     case "department":
     case "email":
     case "name":
