@@ -1,5 +1,13 @@
 import type { ColumnSizingState, OnChangeFn } from "@tanstack/react-table"
 import { useEffect, useMemo, useState } from "react"
+import {
+  applyPreferenceMigrations,
+  createJsonLocalStoragePreferenceStorage,
+  mergeRecordPreference,
+  shallowEqual,
+  useStableCallback,
+  useStableObject,
+} from "@/components/table/v2"
 import type {
   ColumnSizingFeatureOptions,
   DataTableActions,
@@ -7,12 +15,6 @@ import type {
   DataTableFeatureRuntime,
   PreferenceEnvelope,
 } from "../types"
-import {
-  applyPreferenceMigrations,
-  createJsonLocalStoragePreferenceStorage,
-  mergeRecordPreference,
-} from "../utils/preference-storage"
-import { useStableCallback, useStableObject } from "../utils/reference-stability"
 
 function isFeatureEnabled(feature?: { enabled?: boolean }): boolean {
   if (!feature) return false
@@ -32,18 +34,6 @@ function parseSizingRecord(value: unknown): Record<string, number> | null {
     next[key] = item
   }
   return next
-}
-
-function shallowEqualSizing(a: ColumnSizingState, b: ColumnSizingState): boolean {
-  if (a === b) return true
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) return false
-  for (const key of aKeys) {
-    if (!Object.hasOwn(b, key)) return false
-    if (!Object.is(a[key], b[key])) return false
-  }
-  return true
 }
 
 export function useColumnSizingFeature<TData, TFilterSchema>(args: {
@@ -82,13 +72,12 @@ export function useColumnSizingFeature<TData, TFilterSchema>(args: {
     const overrides = args.feature?.defaultSizing
     for (const column of args.columns) {
       const overrideValue = overrides?.[column.id]
-      const base =
+      next[column.id] =
         typeof overrideValue === "number" && Number.isFinite(overrideValue) && overrideValue > 0
           ? overrideValue
           : typeof column.size === "number" && Number.isFinite(column.size) && column.size > 0
             ? column.size
             : 150
-      next[column.id] = base
     }
     return next
   }, [args.columns, args.feature?.defaultSizing])
@@ -152,7 +141,7 @@ export function useColumnSizingFeature<TData, TFilterSchema>(args: {
           ...(args.feature?.migrate ? { migrate: args.feature.migrate } : {}),
         })
       : null
-    const merged = mergeRecordPreference({
+    return mergeRecordPreference({
       stored: migratedEnvelope?.value ?? envelope?.value ?? null,
       defaults,
       ctx: { columnIds },
@@ -171,14 +160,17 @@ export function useColumnSizingFeature<TData, TFilterSchema>(args: {
         return numeric
       },
     })
-    return merged
   }, [enabled, envelope, schemaVersion, columnIds, args.feature?.migrate, defaults, constraints])
 
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() => mergedSizing)
 
   useEffect(() => {
     if (!enabled) return
-    setColumnSizing((prev) => (shallowEqualSizing(prev, mergedSizing) ? prev : mergedSizing))
+    setColumnSizing((prev) =>
+      shallowEqual(prev as Record<string, unknown>, mergedSizing as Record<string, unknown>)
+        ? prev
+        : mergedSizing,
+    )
   }, [enabled, mergedSizing])
 
   const persist = useStableCallback(async (nextSizing: ColumnSizingState) => {

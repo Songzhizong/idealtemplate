@@ -1,5 +1,13 @@
 import type { OnChangeFn, VisibilityState } from "@tanstack/react-table"
 import { useEffect, useMemo, useState } from "react"
+import {
+  applyPreferenceMigrations,
+  createJsonLocalStoragePreferenceStorage,
+  mergeRecordPreference,
+  shallowEqual,
+  useStableCallback,
+  useStableObject,
+} from "@/components/table/v2"
 import type {
   ColumnVisibilityFeatureOptions,
   DataTableActions,
@@ -7,12 +15,6 @@ import type {
   DataTableFeatureRuntime,
   PreferenceEnvelope,
 } from "../types"
-import {
-  applyPreferenceMigrations,
-  createJsonLocalStoragePreferenceStorage,
-  mergeRecordPreference,
-} from "../utils/preference-storage"
-import { useStableCallback, useStableObject } from "../utils/reference-stability"
 
 function isFeatureEnabled(feature?: { enabled?: boolean }): boolean {
   if (!feature) return false
@@ -124,7 +126,9 @@ export function useColumnVisibilityFeature<TData, TFilterSchema>(args: {
   useEffect(() => {
     if (!enabled) return
     setColumnVisibility((prev) =>
-      shallowEqualVisibility(prev, mergedVisibility) ? prev : mergedVisibility,
+      shallowEqual(prev as Record<string, unknown>, mergedVisibility as Record<string, unknown>)
+        ? prev
+        : mergedVisibility,
     )
   }, [enabled, mergedVisibility])
 
@@ -195,16 +199,4 @@ export function useColumnVisibilityFeature<TData, TFilterSchema>(args: {
   })
 
   return { runtime }
-}
-
-function shallowEqualVisibility(a: VisibilityState, b: VisibilityState): boolean {
-  if (a === b) return true
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) return false
-  for (const key of aKeys) {
-    if (!Object.hasOwn(b, key)) return false
-    if (!Object.is(a[key], b[key])) return false
-  }
-  return true
 }

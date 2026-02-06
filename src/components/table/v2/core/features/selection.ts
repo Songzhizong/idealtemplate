@@ -1,5 +1,6 @@
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { shallowEqual, useStableCallback, useStableObject } from "@/components/table/v2"
 import type {
   CrossPageSelection,
   DataTableActions,
@@ -8,7 +9,6 @@ import type {
   SelectionFeatureOptions,
   TableStateSnapshot,
 } from "../types"
-import { useStableCallback, useStableObject } from "../utils/reference-stability"
 
 function isFeatureEnabled(feature?: { enabled?: boolean }): boolean {
   if (!feature) return false
@@ -70,18 +70,6 @@ function buildScopedRowIds<TData>(args: {
   }
   walk(args.rows, null)
   return ids
-}
-
-function shallowEqualRowSelection(a: RowSelectionState, b: RowSelectionState): boolean {
-  if (a === b) return true
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) return false
-  for (const key of aKeys) {
-    if (!Object.hasOwn(b, key)) return false
-    if (!Object.is(a[key], b[key])) return false
-  }
-  return true
 }
 
 function buildAllSelectedState(rowIds: string[], maxSelection?: number): RowSelectionState {
@@ -321,7 +309,11 @@ export function useSelectionFeature<TData, TFilterSchema>(args: {
       rowIds: currentPageRowIds,
       selection: crossPageSelection,
     })
-    setRowSelection((prev) => (shallowEqualRowSelection(prev, derived) ? prev : derived))
+    setRowSelection((prev) =>
+      shallowEqual(prev as Record<string, unknown>, derived as Record<string, unknown>)
+        ? prev
+        : derived,
+    )
   }, [enabled, mode, currentPageRowIds, crossPageSelection])
 
   const onRowSelectionChange: OnChangeFn<RowSelectionState> = useStableCallback((updater) => {
