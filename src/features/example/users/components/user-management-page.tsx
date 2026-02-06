@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react"
 import { PageContainer } from "@/components/common/page-container"
 import type { FilterDefinition } from "@/components/table/v2"
 import {
-  DataTableFilterBar,
+  DataTableActiveFilters,
   DataTablePagination,
   DataTableRoot,
   DataTableSearch,
@@ -327,16 +327,17 @@ export function UserManagementPage() {
                 </div>
               }
             >
-              <DataTableSearch<DemoUserFilters> placeholder="搜索姓名 / 邮箱 / 手机号" />
+              <DataTableSearch<DemoUserFilters>
+                mode="advanced"
+                placeholder="输入关键字后按回车，或选择字段后添加条件"
+                advancedFields={filterDefinitions}
+              />
             </DataTableToolbar>
 
-            <div className="border-b border-border/50 bg-background px-3 py-3">
-              <DataTableFilterBar
-                filters={filterDefinitions}
-                activeFilters={activeFilterDefinitions}
-                labelMode="inside"
-              />
-            </div>
+            <DataTableActiveFilters
+              filters={activeFilterDefinitions}
+              className="border-b border-border/50 bg-background px-3 py-3"
+            />
 
             <div className="overflow-x-auto">
               <DataTableTable<DemoUser> renderEmpty={() => "暂无匹配用户"} />
