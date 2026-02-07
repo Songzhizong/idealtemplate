@@ -2,21 +2,21 @@
 
 本文档聚焦 API 稳定性、版本策略、预留能力、能力边界与开发体验收敛。
 
-## 14. 预留能力（V2.1+）
+## 14. 已落地能力与后续预留
 
 ### 14.1 多列排序
 
-- API 形状 `sort: TableSort[]` 已支持多元素
-- URL 预留格式：`?sort=name.asc,createdAt.desc`
+- API 形状 `sort: TableSort[]` 已支持多元素。
+- `stateUrl` 已落地排序串行化：`name.asc|createdAt.desc`（`|` 分隔多列）。
 - Feature 开关预留：`multiSort: { enabled, maxColumns }`
 
 ### 14.2 虚拟滚动
 
-- API 预留：`features.virtualization?: { mode: "windowed" | "infinite", estimatedRowHeight, overscan }`
+- API 已落地：`features.virtualization?: { mode, rowHeight, overscan, loadMore, loadMoreOffset }`
 - 约束：与 sticky header 和 selection 需保持兼容
 - Selection 必须基于 rowId，不能依赖 DOM 索引
-- 实现方向：优先考虑 `@tanstack/react-virtual`，windowed 模式先落地，infinite 模式与 dataSource 的分页/追加策略协同
-- 注意点：列宽/固定列/展开行（subComponent）会影响行高估算，需要提供 `estimatedRowHeight` 并允许后续测量修正
+- 当前实现生效条件：`scrollContainer="root"` 且未启用 `dragSort/tree/renderSubComponent/analytics.groupBy`
+- 后续可继续优化：更复杂组合场景下的共存策略（见 `src/components/table/v2/TODO.md`）
 
 ---
 
@@ -149,4 +149,3 @@ V2 第一阶段建议把重点放在“状态、数据、偏好、动作、错�
 这些交互不需要影响 core 契约，但应作为 UI 组件的默认行为（可被业务覆盖）。
 
 ---
-

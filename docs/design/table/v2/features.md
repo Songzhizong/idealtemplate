@@ -2,6 +2,27 @@
 
 本文档聚焦 Feature 配置、跨页选择、列定义扩展、树形数据与行拖拽排序。
 
+## 7.1 实现对齐补充（截至 2026-02-07）
+
+以下与当前实现对齐（以 `src/components/table/v2/core/types.ts`、`core/features/*`、`ui/table/helpers.ts` 为准）：
+
+- `DataTableFeatures` 实际包含 11 个能力：
+  - `selection` / `columnVisibility` / `columnSizing` / `pinning` / `columnOrder`
+  - `expansion` / `density` / `tree` / `dragSort` / `virtualization` / `analytics`
+- `selection.crossPage` 已支持：
+  - `selectAllStrategy: "client" | "server"`
+  - `fetchAllIds`
+  - `maxSelection`
+- `pinning` 已支持持久化参数：
+  - `storageKey` / `schemaVersion` / `migrate` / `storage`
+- `tree` 当前不含 `scrollOnExpand`，当前实现参数为：
+  - `selectionBehavior`（`independent` / `cascade`）
+  - `allowNesting`
+  - `indentSize`
+- 拖拽放置位置枚举以实现为准：`"above" | "below" | "inside"`。
+- `DataTableDropIndicator.position` 也已对齐为：`"above" | "below" | "inside"`。
+- `dragSort` 额外支持 `onError` 回调，用于错误反馈。
+
 ## 8. Feature 配置（Features）
 
 feature 的职责是：声明需要哪些 TanStack state、是否持久化、是否注入额外列/工具组件所需信息。
@@ -17,29 +38,51 @@ export interface TablePreferenceStorage<TValue> {
 // 统一 feature 配置格式：{ enabled?: boolean, ...options }
 // 所有 feature 的 enabled 默认为 true（传入配置对象即表示启用）
 
-export interface SelectionFeatureOptions {
+export interface SelectionFeatureOptions<TFilterSchema> {
   enabled?: boolean
   mode?: "page" | "cross-page"
+  crossPage?: {
+    selectAllStrategy?: "client" | "server"
+    fetchAllIds?: (filters: TFilterSchema) => Promise<string[]>
+    maxSelection?: number
+  }
 }
 
 export interface ColumnVisibilityFeatureOptions {
   enabled?: boolean
   storageKey: string
   defaultVisible?: Record<string, boolean>
-  storage?: TablePreferenceStorage<Record<string, boolean>>
+  schemaVersion?: number
+  migrate?: PreferenceMigration<Record<string, boolean>>
+  storage?: TablePreferenceStorage<PreferenceEnvelope<Record<string, boolean>>>
 }
 
 export interface ColumnSizingFeatureOptions {
   enabled?: boolean
   storageKey: string
   defaultSizing?: Record<string, number>
-  storage?: TablePreferenceStorage<Record<string, number>>
+  schemaVersion?: number
+  migrate?: PreferenceMigration<Record<string, number>>
+  storage?: TablePreferenceStorage<PreferenceEnvelope<Record<string, number>>>
 }
 
 export interface PinningFeatureOptions {
   enabled?: boolean
   left?: string[]
   right?: string[]
+  storageKey?: string
+  schemaVersion?: number
+  migrate?: PreferenceMigration<{ left: string[]; right: string[] }>
+  storage?: TablePreferenceStorage<PreferenceEnvelope<{ left: string[]; right: string[] }>>
+}
+
+export interface ColumnOrderFeatureOptions {
+  enabled?: boolean
+  storageKey: string
+  defaultOrder?: string[]
+  schemaVersion?: number
+  migrate?: PreferenceMigration<string[]>
+  storage?: TablePreferenceStorage<PreferenceEnvelope<string[]>>
 }
 
 export interface ExpansionFeatureOptions<TData> {
@@ -51,7 +94,9 @@ export interface DensityFeatureOptions {
   enabled?: boolean
   storageKey: string
   default?: "compact" | "comfortable"
-  storage?: TablePreferenceStorage<"compact" | "comfortable">
+  schemaVersion?: number
+  migrate?: PreferenceMigration<"compact" | "comfortable">
+  storage?: TablePreferenceStorage<PreferenceEnvelope<"compact" | "comfortable">>
 }
 
 export interface TreeFeatureOptions<TData> {
@@ -66,10 +111,12 @@ export interface TreeFeatureOptions<TData> {
   defaultExpandedDepth?: number
   /** 默认展开的行 ID 列表 */
   defaultExpandedRowIds?: string[]
+  /** 选择联动策略 */
+  selectionBehavior?: "independent" | "cascade"
+  /** 是否允许配合 dragSort 改变层级 */
+  allowNesting?: boolean
   /** 缩进宽度（像素），默认 24 */
   indentSize?: number
-  /** 展开/折叠时是否自动滚动到视口 */
-  scrollOnExpand?: boolean
 }
 
 export interface DragSortFeatureOptions<TData> {
@@ -82,9 +129,20 @@ export interface DragSortFeatureOptions<TData> {
     overIndex: number
     activeRow: TData
     overRow: TData
-    /** 重排后的完整行数据（仅 local 数据源时可用） */
+    /** 重排后的完整行数据（仅平铺根节点场景可用） */
     reorderedRows?: TData[]
+    dropPosition?: "above" | "below" | "inside"
+    activeParentId?: string | null
+    overParentId?: string | null
+    targetParentId?: string | null
+    targetIndex?: number
   }) => void | Promise<void>
+  onError?: (args: {
+    error: unknown
+    activeId: string
+    overId: string
+    dropPosition: "above" | "below" | "inside"
+  }) => void
   /** 是否使用拖拽手柄，false 时整行可拖拽 */
   handle?: boolean
   /** 判断行是否可被拖拽 */
@@ -97,15 +155,38 @@ export interface DragSortFeatureOptions<TData> {
   allowNesting?: boolean
 }
 
+export interface VirtualizationFeatureOptions {
+  enabled?: boolean
+  mode?: "windowed" | "infinite"
+  rowHeight?: number
+  overscan?: number
+  loadMore?: () => void | Promise<void>
+  loadMoreOffset?: number
+}
+
+export interface AnalyticsFeatureOptions<TData> {
+  enabled?: boolean
+  groupBy?: (row: TData) => string
+  groupLabel?: (args: { group: string; count: number }) => string
+  summary?: {
+    label?: string
+    labelColumnId?: string
+    values: Record<string, (rows: TData[]) => ReactNode>
+  }
+}
+
 export interface DataTableFeatures<TData, TFilterSchema> {
-  selection?: SelectionFeatureOptions
+  selection?: SelectionFeatureOptions<TFilterSchema>
   columnVisibility?: ColumnVisibilityFeatureOptions
   columnSizing?: ColumnSizingFeatureOptions
   pinning?: PinningFeatureOptions
+  columnOrder?: ColumnOrderFeatureOptions
   expansion?: ExpansionFeatureOptions<TData>
   density?: DensityFeatureOptions
   tree?: TreeFeatureOptions<TData>
   dragSort?: DragSortFeatureOptions<TData>
+  virtualization?: VirtualizationFeatureOptions
+  analytics?: AnalyticsFeatureOptions<TData>
 }
 ```
 
@@ -548,7 +629,7 @@ stateDiagram-v2
 
 | 选项             | 类型                              | 默认值          | 说明                           |
 |----------------|---------------------------------|--------------|------------------------------|
-| `handle`       | `boolean`                       | `false`      | `true` 时需要拖拽手柄，`false` 时整行可拖 |
+| `handle`       | `boolean`                       | `true`       | `true` 时需要拖拽手柄，`false` 时整行可拖 |
 | `canDrag`      | `(row) => boolean`              | `() => true` | 控制哪些行可拖拽                     |
 | `canDrop`      | `(active, over) => boolean`     | `() => true` | 控制放置目标有效性                    |
 | `dragOverlay`  | `"row" \| "ghost" \| "minimal"` | `"row"`      | 拖拽时的视觉反馈                     |
@@ -585,8 +666,8 @@ const columns = [
 ```tsx
 // 内置放置指示器组件
 export function DataTableDropIndicator(props: {
-  position: "before" | "after"
-  rowId: string
+  position: "above" | "below" | "inside"
+  indentPx?: number
 }): JSX.Element
 ```
 
@@ -607,7 +688,7 @@ features: {
   dragSort: {
     allowNesting: true,  // 允许拖拽改变层级
     onReorder: ({ activeId, overId, dropPosition }) => {
-      // dropPosition: "before" | "after" | "inside"
+      // dropPosition: "above" | "below" | "inside"
       // "inside" 表示作为目标节点的子节点
     },
     canDrop: (activeRow, overRow) => {

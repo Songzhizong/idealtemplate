@@ -2,6 +2,25 @@
 
 本文档聚焦 V2 Core：对外 API、核心契约、状态适配器与数据源适配器。
 
+## 3.1 实现对齐补充（截至 2026-02-07）
+
+以下为当前实现与本文原始设计草案的关键对齐点（以 `src/components/table/v2/core/types.ts`、`use-data-table.ts` 为准）：
+
+- `DataTableInstance` 当前包含 `__version: "2.0"`。
+- `DataTableInstance.meta.feature` 额外包含：
+  - `columnOrderEnabled`
+  - `virtualizationEnabled`
+  - `analyticsEnabled`
+- `DataTableSelection` 当前额外包含：
+  - `selectionScope`（`ids` / `all+excludedRowIds`）
+  - `crossPage`（跨页选择元信息）
+- `DataTableActions` 当前额外包含：
+  - `setColumnPin` / `resetColumnPinning`
+  - `setColumnOrder` / `moveColumn` / `resetColumnOrder`
+- `errors` 已结构化为 `DataTableErrors`，内部为 `DataTableError`（`severity/code/message/original/retryable`）。
+- `remote(...)` 当前支持 `keepPreviousData?: boolean`（默认开启）。
+- `stateUrl` 排序序列化格式已落地为 `field.asc|field.desc`（`|` 分隔多列）。
+
 ## 4. 对外 API（建议形态）
 
 ### 4.1 `useDataTable`：统一入口
@@ -48,6 +67,17 @@ export interface DataTableSelection<TData> {
   mode: "page" | "cross-page"
   selectedRowIds: string[]
   selectedRowsCurrentPage: TData[]
+  selectionScope:
+    | { type: "ids"; rowIds: string[] }
+    | { type: "all"; excludedRowIds: string[] }
+  crossPage?: {
+    selection: {
+      mode: "include" | "exclude"
+      rowIds: Set<string>
+    }
+    totalSelected: number | "all"
+    isAllSelected: boolean
+  }
 }
 
 // tree 始终存在，未启用时 enabled=false
@@ -64,7 +94,21 @@ export interface DataTableDragSort {
   activeId: string | null
 }
 
+export interface DataTableError {
+  severity: "blocking" | "non-blocking"
+  code?: string
+  message?: string
+  original: unknown
+  retryable?: boolean
+}
+
+export interface DataTableErrors {
+  blocking?: DataTableError
+  nonBlocking?: DataTableError
+}
+
 export interface DataTableInstance<TData, TFilterSchema> {
+  __version: "2.0"
   table: Table<TData>
   status: DataTableStatus
   activity: DataTableActivity
@@ -74,16 +118,16 @@ export interface DataTableInstance<TData, TFilterSchema> {
   selection: DataTableSelection<TData>  // 始终存在，通过 enabled 判断是否可用
   tree: DataTableTree                    // 始终存在，通过 enabled 判断是否可用
   dragSort: DataTableDragSort            // 始终存在，通过 enabled 判断是否可用
-  errors?: {
-    blocking?: unknown
-    nonBlocking?: unknown
-  }
+  errors?: DataTableErrors
   meta: {
     feature: {
       selectionEnabled: boolean
       columnVisibilityEnabled: boolean
       columnSizingEnabled: boolean
       pinningEnabled: boolean
+      columnOrderEnabled: boolean
+      virtualizationEnabled: boolean
+      analyticsEnabled: boolean
       expansionEnabled: boolean
       densityEnabled: boolean
       treeEnabled: boolean
@@ -131,6 +175,11 @@ export interface DataTableActions {
   // 偏好重置（未启用对应 feature 时为 no-op）
   resetColumnVisibility: () => void
   resetColumnSizing: () => void
+  setColumnPin: (columnId: string, pin: "left" | "right" | false) => void
+  resetColumnPinning: () => void
+  setColumnOrder: (columnOrder: string[]) => void
+  moveColumn: (columnId: string, direction: "left" | "right") => void
+  resetColumnOrder: () => void
   resetDensity: () => void
 
   // 树形操作（未启用 tree 时为 no-op）
@@ -393,6 +442,7 @@ export interface RemoteDataSourceOptions<TData, TFilterSchema, TResponse> {
     total?: number
     extraMeta?: Record<string, unknown>
   }
+  keepPreviousData?: boolean
 }
 
 export function remote<TData, TFilterSchema, TResponse>(
@@ -422,4 +472,3 @@ export function local<TData, TFilterSchema>(
 ```
 
 ---
-

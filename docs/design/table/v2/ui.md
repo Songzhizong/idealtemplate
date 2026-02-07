@@ -2,6 +2,17 @@
 
 本文档聚焦组件层 API、状态反馈、i18n/a11y、错误处理与筛选器 UI 规范。
 
+## 8.1 实现对齐补充（截至 2026-02-07）
+
+以当前导出与实现为准（`src/components/table/v2/ui/*`）：
+
+- `DataTableSelectionBar.actions` 回调参数当前额外包含：
+  - `selectionScope`
+  - `exportPayload`
+- `DataTableTable` 已支持 `renderSubComponent`（行展开内容渲染）。
+- `DataTableViewOptions` 已集成列显隐、密度切换、重置列固定、重置列顺序、重置全部。
+- 文中的示例配置 `features: { selection: true }` 为旧写法；当前应使用对象写法（例如 `selection: { enabled: true }`）。
+
 ## 9. UI API（组件层，对外导出建议）
 
 UI 层只依赖 `dt`，不直接依赖 URL/Query。
@@ -95,7 +106,10 @@ const dt = useDataTable({
   columns,
   dataSource: remote({ queryKey: ["users"], queryFn: getUsers, map }),
   state: stateUrl({ key: "users", parsers }),
-  features: { selection: true, columnVisibility: { storageKey: "users.columns" } },
+  features: {
+    selection: { enabled: true, mode: "page" },
+    columnVisibility: { storageKey: "users.columns" },
+  },
 })
 
 return <DataTablePreset dt={dt} height="calc(100vh - 240px)" layout={{ scrollContainer: "root", stickyHeader: true }} />
@@ -230,8 +244,8 @@ V2 必须保证“重渲染不扩散”，否则会出现每次 dt 变化导致 
 - `useDataTable` 内部必须保证这些引用稳定：
   - `dt.actions`：使用稳定的回调与 memo 容器。
   - `dt.filters`：对外暴露的对象引用稳定，只在其内部字段变化。
-  - `dt`：可以不要求整体对象稳定，但 UI 侧 Context 不应直接以“整对象变化”驱动所有子组件刷新。
-- **强制要求**：UI 层必须使用 Context 拆分或 selector 默认实现（例如 `useDataTableContext(s => s.pagination)`），禁止将整个 `dt` 作为单一 Context 值传播。
+  - `dt`：可以不要求整体对象稳定。
+- 当前实现使用 `DataTableProvider` 直接提供 `dt` 单一 Context；若后续在大表格场景出现明显渲染压力，可演进为 Context 拆分或 selector 方案。
 - 对 Cell/Row 等热点组件使用 memo（在不破坏正确性的前提下）。
 
 selector API 形态建议如下：
@@ -401,7 +415,7 @@ function DataTableFilterItem<TFilterSchema, K extends keyof TFilterSchema>({
 }: {
   definition: FilterDefinition<TFilterSchema, K>
 }) {
-  const dt = useDataTableContext()
+  const dt = useDataTableInstance<unknown, TFilterSchema>()
 
   // 从 dt.filters.state 读取当前值
   const value = dt.filters.state[definition.key]
@@ -454,4 +468,3 @@ export function DataTableActiveFilters<TFilterSchema>(props: {
 - 文本类型筛选（`type = "text"`）的单项清空值应统一为 `""`；其余类型统一为 `null`（或类型对应空值）。
 
 ---
-
