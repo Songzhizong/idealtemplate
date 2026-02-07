@@ -48,7 +48,12 @@ export function DataTableRoot<TData, TFilterSchema>({
   return (
     <DataTableProvider dt={dt} {...(layout ? { layout } : {})}>
       <div
-        className={cn("flex min-h-0 flex-col", scrollContainer === "root" && "h-full", className)}
+        className={cn(
+          "flex min-h-0 flex-col overflow-clip",
+          " [&>*:first-child]:rounded-t-[inherit] [&>*:last-child]:rounded-b-[inherit]",
+          scrollContainer === "root" && "h-full",
+          className,
+        )}
         style={style}
       >
         {children}

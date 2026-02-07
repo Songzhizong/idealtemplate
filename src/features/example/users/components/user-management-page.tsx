@@ -370,6 +370,7 @@ export function UserManagementPage() {
                 mode="advanced"
                 placeholder="输入关键字按回车，或选择字段后添加条件（布尔/区间/日期）"
                 advancedFields={filterDefinitions}
+                className="[&>div]:border-border/60 [&>div]:bg-card"
               />
             </DataTableToolbar>
 
