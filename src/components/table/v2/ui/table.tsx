@@ -1,7 +1,7 @@
 import { flexRender, type Row } from "@tanstack/react-table"
 import { AlertCircle, X } from "lucide-react"
 import type { ReactElement, ReactNode } from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -29,6 +29,7 @@ import {
   getTreeIndentSize,
   getVirtualizationMeta,
 } from "./table/helpers"
+import { useHorizontalScrollSync } from "./table/use-horizontal-scroll-sync"
 import { useTableBodyRows } from "./table/use-table-body"
 
 export interface DataTableTableProps<TData> {
@@ -70,6 +71,8 @@ export function DataTableTable<TData>({
   const wrapperRef = useRef<HTMLDivElement>(null)
   const splitHeaderScrollRef = useRef<HTMLDivElement>(null)
   const splitBodyViewportRef = useRef<HTMLDivElement>(null)
+  const syncRafRef = useRef<number | null>(null)
+  const syncingTargetRef = useRef<"header" | "body" | null>(null)
   const [scrollEdges, setScrollEdges] = useState({ left: false, right: false })
 
   const leftPinned = dt.table.getLeftLeafColumns()
@@ -83,73 +86,17 @@ export function DataTableTable<TData>({
   const isInitialLoading = dt.activity.isInitialLoading || !dt.activity.preferencesReady
   const isFetching = dt.activity.isFetching
 
-  useEffect(() => {
-    const defaultScrollElement = wrapperRef.current?.querySelector<HTMLDivElement>(
-      '[data-slot="table-container"]',
-    )
-    const headerScrollElement = useSplitHeaderBody ? splitHeaderScrollRef.current : null
-    const bodyHorizontalScrollElement = useRootSplitHeaderBody
-      ? splitBodyViewportRef.current
-      : defaultScrollElement
-
-    if (!bodyHorizontalScrollElement) return
-
-    const updateEdges = () => {
-      const left = bodyHorizontalScrollElement.scrollLeft > 0
-      const right =
-        bodyHorizontalScrollElement.scrollLeft + bodyHorizontalScrollElement.clientWidth <
-        Math.max(0, bodyHorizontalScrollElement.scrollWidth - 1)
-      setScrollEdges((prev) =>
-        prev.left === left && prev.right === right ? prev : { left, right },
-      )
-    }
-
-    const syncHeaderScroll = () => {
-      if (!headerScrollElement) return
-      if (headerScrollElement.scrollLeft !== bodyHorizontalScrollElement.scrollLeft) {
-        headerScrollElement.scrollLeft = bodyHorizontalScrollElement.scrollLeft
-      }
-    }
-
-    const handleBodyHorizontalScroll = () => {
-      updateEdges()
-      syncHeaderScroll()
-    }
-
-    updateEdges()
-    syncHeaderScroll()
-
-    const resizeObserver =
-      typeof ResizeObserver === "undefined"
-        ? null
-        : new ResizeObserver(() => {
-            updateEdges()
-            syncHeaderScroll()
-          })
-
-    if (resizeObserver) {
-      resizeObserver.observe(bodyHorizontalScrollElement)
-      const bodyContent = bodyHorizontalScrollElement.firstElementChild
-      if (bodyContent) {
-        resizeObserver.observe(bodyContent)
-      }
-    }
-
-    const handleResize = () => {
-      updateEdges()
-      syncHeaderScroll()
-    }
-
-    bodyHorizontalScrollElement.addEventListener("scroll", handleBodyHorizontalScroll, {
-      passive: true,
-    })
-    window.addEventListener("resize", handleResize)
-    return () => {
-      bodyHorizontalScrollElement.removeEventListener("scroll", handleBodyHorizontalScroll)
-      window.removeEventListener("resize", handleResize)
-      resizeObserver?.disconnect()
-    }
-  }, [useRootSplitHeaderBody, useSplitHeaderBody])
+  useHorizontalScrollSync({
+    useSplitHeaderBody,
+    useRootSplitHeaderBody,
+    useWindowSplitHeaderBody,
+    wrapperRef,
+    splitHeaderScrollRef,
+    splitBodyViewportRef,
+    syncRafRef,
+    syncingTargetRef,
+    setScrollEdges,
+  })
 
   const headerClassName = cn("[&_tr]:border-border/50")
 
@@ -403,7 +350,7 @@ export function DataTableTable<TData>({
         </div>
       )}
       {dragSortEnabled && dragSortMeta.error ? (
-        <div className="absolute right-3 top-3 z-20 flex max-w-[360px] items-start gap-2 rounded-md border border-destructive/40 bg-background px-2 py-1.5 text-xs text-destructive shadow-sm">
+        <div className="absolute right-3 top-3 z-20 flex max-w-90 items-start gap-2 rounded-md border border-destructive/40 bg-background px-2 py-1.5 text-xs text-destructive shadow-sm">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span className="line-clamp-2">
             {getErrorMessage(dragSortMeta.error, i18n.dragSort.errorText)}
@@ -464,7 +411,7 @@ export function DataTableTable<TData>({
           >
             <div
               ref={splitHeaderScrollRef}
-              className="scrollbar-none overflow-x-auto overflow-y-hidden"
+              className="scrollbar-none overflow-x-hidden overflow-y-hidden"
             >
               <table data-slot="table" className="w-full caption-bottom text-sm table-fixed">
                 <TableHeader className={headerClassName}>{headerRows}</TableHeader>
