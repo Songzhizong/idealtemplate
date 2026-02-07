@@ -63,7 +63,9 @@ export function DataTableTable<TData>({
   const cellDensityClass = density === "comfortable" ? "py-4" : "py-2"
   const treeIndentSize = getTreeIndentSize(tableMeta)
   const treeAllowNesting = getTreeAllowNesting(tableMeta)
-  const useSplitHeaderBody = scrollContainer === "root" && isStickyHeader
+  const useRootSplitHeaderBody = scrollContainer === "root" && isStickyHeader
+  const useWindowSplitHeaderBody = scrollContainer === "window" && isStickyHeader
+  const useSplitHeaderBody = useRootSplitHeaderBody || useWindowSplitHeaderBody
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const splitHeaderScrollRef = useRef<HTMLDivElement>(null)
@@ -86,7 +88,7 @@ export function DataTableTable<TData>({
       '[data-slot="table-container"]',
     )
     const headerScrollElement = useSplitHeaderBody ? splitHeaderScrollRef.current : null
-    const bodyHorizontalScrollElement = useSplitHeaderBody
+    const bodyHorizontalScrollElement = useRootSplitHeaderBody
       ? splitBodyViewportRef.current
       : defaultScrollElement
 
@@ -147,7 +149,7 @@ export function DataTableTable<TData>({
       window.removeEventListener("resize", handleResize)
       resizeObserver?.disconnect()
     }
-  }, [useSplitHeaderBody])
+  }, [useRootSplitHeaderBody, useSplitHeaderBody])
 
   const headerClassName = cn("[&_tr]:border-border/50")
 
@@ -237,7 +239,7 @@ export function DataTableTable<TData>({
     rowClassName,
     cellDensityClass,
     canVirtualize,
-    wrapperRef: useSplitHeaderBody ? splitBodyViewportRef : wrapperRef,
+    wrapperRef: useRootSplitHeaderBody ? splitBodyViewportRef : wrapperRef,
     virtualizationMeta,
     analyticsMeta,
     renderDataRow,
@@ -419,7 +421,7 @@ export function DataTableTable<TData>({
           ) : null}
         </div>
       ) : null}
-      {useSplitHeaderBody ? (
+      {useRootSplitHeaderBody ? (
         <>
           <div className="w-full shrink-0 overflow-hidden">
             <div
@@ -453,6 +455,39 @@ export function DataTableTable<TData>({
               ) : null}
             </table>
           </ScrollArea>
+        </>
+      ) : useWindowSplitHeaderBody ? (
+        <>
+          <div
+            className="sticky z-15 w-full shrink-0 overflow-hidden border-b border-border/50 bg-table-header"
+            style={{ top: "var(--dt-sticky-top,0px)" }}
+          >
+            <div
+              ref={splitHeaderScrollRef}
+              className="scrollbar-none overflow-x-auto overflow-y-hidden"
+            >
+              <table data-slot="table" className="w-full caption-bottom text-sm table-fixed">
+                <TableHeader className={headerClassName}>{headerRows}</TableHeader>
+              </table>
+            </div>
+          </div>
+
+          <div ref={wrapperRef} className="min-h-0 w-full">
+            <Table className="table-fixed">
+              <TableBody>{tableBodyContent}</TableBody>
+              {summaryCells ? (
+                <TableFooter>
+                  <TableRow className={rowClassName}>
+                    {summaryCells.map((value, index) => (
+                      <TableCell key={`__summary__${String(index)}`} className={cellDensityClass}>
+                        {value}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableFooter>
+              ) : null}
+            </Table>
+          </div>
         </>
       ) : (
         <div
